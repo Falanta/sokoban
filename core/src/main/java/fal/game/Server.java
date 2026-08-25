@@ -41,7 +41,6 @@ public class Server implements Runnable{
         FileHandle file = Gdx.files.local(String.format("logs/%s.txt",time_formatter.format(Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()))));
         StringBuilder log_string = new StringBuilder();
         for(String str : this.log){
-            Main.Debug(str);
             log_string.append(str);
         }
         file.writeString(log_string.toString(), false);
@@ -88,7 +87,7 @@ public class Server implements Runnable{
     public void Connect(CSConnection connection, String player_id){
         Debug(String.format("Connection: %s...",player_id));
         this.connections.put(player_id,connection);
-
+        this.ProvideMessage(new Message("server",String.format("%s joined",player_id)));
         Debug("Done!");
     }
     public void Kick(String player_id){
@@ -169,10 +168,10 @@ public class Server implements Runnable{
         }
     }
     public void ProvideMessage(Message msg){
-        Debug(String.format("Provide message from %s: %s",msg.author,msg.content));
+        Debug(String.format("          - Provide message from %s: %s",msg.author,msg.content));
         for(String player_id: connections.keySet()) {
-//            if(Objects.equals(player_id, msg.author)){continue;}
-            Debug("      - " + player_id);
+            if(Objects.equals(player_id, msg.author)){continue;}
+            Debug("            - " + player_id);
             Map data = new HashMap();
             data.put("message."+msg.author,msg.Copy());
             data.put("message",true);
@@ -193,13 +192,15 @@ public class Server implements Runnable{
 
     }
     public void Tick(){
-        Debug("  - Tick");
+//        Debug("  - Tick");
         this.CheckInputDatas();
 
         for(String player_id: connections.keySet()){
             try {
+                Debug("  - Send data to "+player_id);
                 Map data = new HashMap();
                 data.put("tps",this.actual_tps);
+                Debug("    - "+data.toString());
                 this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
             }catch (Exception e){
                 Debug("Error: "+e);

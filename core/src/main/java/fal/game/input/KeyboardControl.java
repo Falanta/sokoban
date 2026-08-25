@@ -48,4 +48,8 @@ public class KeyboardControl implements PlayerController {
     public boolean ChatInteraction() {
         return Gdx.input.isKeyPressed(Input.Keys.ENTER);
     }
+    @Override
+    public boolean ChatHideInteraction() {
+        return Gdx.input.isKeyPressed(Input.Keys.H);
+    }
 }

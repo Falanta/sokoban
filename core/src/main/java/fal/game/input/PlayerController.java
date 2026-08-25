@@ -15,4 +15,5 @@ public interface PlayerController {
     boolean CameraZoomIn();
     boolean CameraZoomOut();
     boolean ChatInteraction();
+    boolean ChatHideInteraction();
 }

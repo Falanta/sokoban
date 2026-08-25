@@ -88,7 +88,7 @@ public class LevelMap {
         float height = sizeArr.get(1).asFloat();
         GenerateEmpty(new Vector2(width, height));
         JsonValue assets = root.get("assets");
-        int y = 0;
+        short y = 0;
         for (int i = 1; i < lines.length; i++) {
             String line = lines[i];
             if (y >= height) break;
@@ -97,12 +97,13 @@ public class LevelMap {
                 char c = line.charAt(x);
                 String symbolKey = String.valueOf(c);
 
-                if (assets.has(symbolKey)) {
-                    String cellType = assets.getString(symbolKey);
-                    Cell cell = new Cell(cellType, x, (short) y);
-                    Set(new Vector2(x, (short) y), cell);
+                if(symbolKey.equals(" ")){
+                    Set(new Vector2(x, y), null);
+                }else if (assets.has(symbolKey)) {
+                    Cell cell = new Cell(assets.getString(symbolKey), x, y);
+                    Set(new Vector2(x, y), cell);
                 } else {
-                    Set(new Vector2(x, (short) y), null);
+                    Set(new Vector2(x, y), new Cell("unknown",x,y));
                 }
             }
             y++;

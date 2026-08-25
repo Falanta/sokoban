@@ -3,6 +3,7 @@ package fal.game.render;
 import static fal.game.Client.manager;
 import static fal.game.Main.Debug;
 
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 
@@ -17,12 +18,16 @@ public class Tile {
     public Tile(String texture_name, ArrayList<String> logic_tags){
         Debug("Loading tile: "+texture_name);
         if(texture_name != null) {
-            this.texture = manager.GetRegion(texture_name);
-            if(this.texture == null){
-                Debug(" - Texture is null");
-            }else{
-                Debug(" - Texture: "+this.texture);
+            try {
+                Debug(" - Texture: " + texture_name);
+                this.texture = manager.GetRegion(texture_name);
+            }catch (Exception e){
+                Debug(" - Unknown texture");
+                this.texture = manager.GetRegion("template");
             }
+        }else{
+            Debug(" - Texture is null");
+            this.texture = manager.GetRegion("template");
         }
         this.name = texture_name;
         this.logic_tags = logic_tags;

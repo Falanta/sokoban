@@ -16,6 +16,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import org.lwjgl.Sys;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ import fal.game.world.World;
 public class Client {
     public static class ResourceManager {
         public final AssetManager assetManager;
-        private TextureAtlas atlas;
+        public TextureAtlas atlas;
         public ResourceManager() {
             assetManager = new AssetManager();
 
@@ -88,28 +90,10 @@ public class Client {
         public float speed = 0.05f;
         public float move_speed = 2.0f;
         public OrthographicCamera camera = new OrthographicCamera();
-        private PlayerController controller;
-        public Camera(PlayerController controller){
-            this.controller = controller;
+        public Camera(){
             this.camera.setToOrtho(false, 480, 256);
         }
         public void Update(){
-            if(this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()){
-                this.target_zoom = Math.min(this.target_zoom + speed,1.0f);
-            } else if(!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()){
-                this.target_zoom = Math.max(this.target_zoom - speed,0.25f);
-            }
-            if(this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()){
-                this.target_pos.x = Math.min(this.target_pos.x + move_speed*zoom,200.0f);
-            } else if(!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()){
-                this.target_pos.x = Math.max(this.target_pos.x - move_speed*zoom,-100.0f);
-            }
-            if(this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()){
-                this.target_pos.y = Math.min(this.target_pos.y + move_speed*zoom,200.0f);
-            } else if(!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()){
-                this.target_pos.y = Math.max(this.target_pos.y - move_speed*zoom,-100.0f);
-            }
-
             this.pos.add((this.target_pos.x-this.pos.x)*sensitivity,(this.target_pos.y-this.pos.y)*sensitivity);
             this.zoom += (this.target_zoom - this.zoom)*sensitivity;
             this.camera.position.x = this.pos.x;
@@ -120,6 +104,7 @@ public class Client {
     }
     private final String debug_prefix;
     public SpriteBatch batch;
+    public static long milli_time = 0;
     public static ResourceManager manager;
     public CSConnection active_connection;
     public short last_tps;
@@ -130,20 +115,26 @@ public class Client {
     public ArrayList<Message> chat = new ArrayList<Message>();
     public World world;
     public Camera cam;
-    public UI main_interface = new UI(this);
+    public Vector2 actual_cursor_position;
+    public UI main_interface;
     public Map<String,Tile> tiles_pallete;
     public PlayerController controller;
-    private Map<String,Boolean> control_memory = new HashMap<>();
+    private Map<String,Object> control_memory = new HashMap<>();
     private void Debug(String text){
         Main.Debug(this.debug_prefix+text);
     }
-    public Client(String id){
+    public Client(String id, PlayerController controller){
         this.debug_prefix = String.format("[CLIENT:%s] ",id);
         Debug(String.format("Init client [%s]...",id));
 
-        this.controller = new KeyboardControl();
-        this.cam = new Camera(this.controller);
+        this.controller = controller;
+        this.cam = new Camera();
+
+        this.control_memory.put("chat_hide_interaction",false);
+        this.control_memory.put("chat_hide",false);
         this.control_memory.put("chat_interaction",false);
+        this.control_memory.put("chat_line_open",false);
+        this.control_memory.put("chat_line_buffer","");
 
         this.id = id;
         this.active_connection = null;
@@ -165,9 +156,11 @@ public class Client {
         this.manager = new ResourceManager();
         this.manager.LoadAll();
 
+        this.main_interface = new UI(this);
+
         Debug("- Loading tiles...");
         this.tiles_pallete = new HashMap<>();
-        this.tiles_pallete.put("template",new Tile(null,null));
+        this.tiles_pallete.put("template",new Tile("template",null));
         this.tiles_pallete.get("template").size = new Vector2(12,12);
         this.tiles_pallete.put("stone",new Tile("stone",new ArrayList<>(Arrays.asList("solid"))));
         this.tiles_pallete.put("wooden_floor",new Tile("wooden_floor",new ArrayList<>(Arrays.asList())));
@@ -201,7 +194,7 @@ public class Client {
     }
     public void SendToChat(Message msg){
         this.chat.add(msg);
-        if(this.chat.size() >= 10){
+        if(this.chat.size() > 10){
             this.chat.remove(0);
         }
     }
@@ -240,14 +233,14 @@ public class Client {
         this.waiting_orders.add(order_type);
     }
     public void CheckOrders(){
-        Debug("- Check orders");
+        Debug("     - Check orders");
         if(this.last_data != null && !this.waiting_orders.isEmpty()){
             Iterator<String> order_iterator = this.waiting_orders.iterator();
             while(order_iterator.hasNext()){
                 String order_type = order_iterator.next();
                 if(last_data.containsKey(order_type+"_answer")){
                     Object answer = last_data.get(order_type+"_answer");
-                    Debug(String.format("  - Completed order <%s>: %s",order_type,answer.toString()));
+                    Debug(String.format("       - Completed order <%s>: %s",order_type,answer.toString()));
                     switch (order_type){
                         case "get_map":
                             this.world.map.matrix = (ArrayList<ArrayList<LevelMap.Cell>>) answer;
@@ -266,15 +259,15 @@ public class Client {
         }
     }
     public void CheckMessages(){
-        Debug("- Check messages");
+        Debug("     - Check messages");
         if(this.last_data.containsKey("message")) {
             Iterator<String> input_iterator = ((Map<String,Object>)last_data).keySet().iterator();
             while(input_iterator.hasNext()) {
                 String input = input_iterator.next();
                 if(input.contains("message.")){
-                    Debug(input);
+                    Debug("       - "+input);
                     Message msg = (Message)this.last_data.get(input);
-                    Debug(msg.log_formatted);
+                    Debug("         - "+msg.log_formatted);
                     this.SendToChat(msg);
                     input_iterator.remove();
                 }
@@ -288,7 +281,12 @@ public class Client {
         this.batch.setProjectionMatrix(this.main_interface.ui_viewport.getCamera().combined);
         this.batch.begin();
         this.main_interface.DrawDebugInformation();
-        this.main_interface.DrawChat();
+        if(!(boolean)this.control_memory.get("chat_hide")) {
+            this.main_interface.DrawChat();
+        }
+        if((boolean)this.control_memory.get("chat_line_open")){
+            this.main_interface.DrawChatLine("GOVNO"+this.control_memory.get("chat_line_buffer"));
+        }
         this.batch.end();
     }
     public void RenderMap(Vector2 offset){
@@ -297,8 +295,10 @@ public class Client {
         for(short y = 0; y < this.world.map.size.y; y++){
             for(short x = 0; x < this.world.map.size.x; x++){
                 LevelMap.Cell cell = this.world.map.Get(new Vector2(x,y));
-                if(cell != null && !tiles_pallete.get(cell.type).solid) { // Только не-плотные
-                    batch.draw(tiles_pallete.get(cell.type).texture, x*tile_size_x+offset.x, -y*tile_size_y+offset.y, tile_size_x, tile_size_y);
+                if(cell == null) {continue;}
+                if(!tiles_pallete.containsKey(cell.type)){continue;}
+                if(!tiles_pallete.get(cell.type).solid){
+                    batch.draw(tiles_pallete.get(cell.type).texture, x * tile_size_x + offset.x, -y * tile_size_y + offset.y, tile_size_x, tile_size_y);
                 }
             }
         }
@@ -307,9 +307,12 @@ public class Client {
         for(short y = 0; y < this.world.map.size.y; y++){
             for(short x = 0; x < this.world.map.size.x; x++){
                 LevelMap.Cell cell = this.world.map.Get(new Vector2(x,y));
-                if(cell != null && tiles_pallete.get(cell.type).solid) {
-                    float drawX = x * tile_size_x + offset.x + 3;
-                    float drawY = -y * tile_size_y + offset.y - 3;
+                if(cell == null) {continue;}
+                float drawX = x * tile_size_x + offset.x + 3;
+                float drawY = -y * tile_size_y + offset.y - 3;
+                if(!tiles_pallete.containsKey(cell.type)){
+                    batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
+                }else if(tiles_pallete.get(cell.type).solid) {
                     batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
                 }
             }
@@ -318,29 +321,78 @@ public class Client {
         for(short y = 0; y < this.world.map.size.y; y++){
             for(short x = 0; x < this.world.map.size.x; x++){
                 LevelMap.Cell cell = this.world.map.Get(new Vector2(x,y));
-                if(cell != null && tiles_pallete.get(cell.type).solid) {
-                    batch.draw(tiles_pallete.get(cell.type).texture, x*tile_size_x+offset.x, -y*tile_size_y+offset.y, tile_size_x, tile_size_y);
+                if(cell == null) {continue;}
+                String tile_texture = "template";
+                if(tiles_pallete.containsKey(cell.type)){
+                    if(!tiles_pallete.get(cell.type).solid){continue;}
+                    tile_texture = cell.type;
                 }
+                batch.draw(tiles_pallete.get(tile_texture).texture, x*tile_size_x+offset.x, -y*tile_size_y+offset.y, tile_size_x, tile_size_y);
             }
         }
     }
     public void Control(){
-        if(this.controller.ChatInteraction()){
-            if(!this.control_memory.get("chat_interaction")) {
-                this.SendMessage("PENIS");
-                this.control_memory.put("chat_interaction",true);
+        if(this.controller != null) {
+            if(!(boolean)this.control_memory.get("chat_line_open")){
+                if(this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()){
+                    this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed,1.0f);
+                } else if(!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()){
+                    this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed,0.25f);
+                }
+                if(this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()){
+                    this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed*this.cam.zoom,200.0f);
+                } else if(!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()){
+                    this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed*this.cam.zoom,-100.0f);
+                }
+                if(this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()){
+                    this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed*this.cam.zoom,200.0f);
+                } else if(!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()){
+                    this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed*this.cam.zoom,-100.0f);
+                }
+                if (this.controller.ChatHideInteraction()) {
+                    if (!(boolean)this.control_memory.get("chat_hide_interaction")) {
+                        if((boolean)this.control_memory.get("chat_hide")){
+                            this.control_memory.put("chat_hide",false); // Hide chat
+                        }else{
+                            this.control_memory.put("chat_hide",true); // Show chat
+                        }
+                        this.control_memory.put("chat_hide_interaction", true);
+                    }
+                } else {
+                    if ((boolean)this.control_memory.get("chat_hide_interaction")) {
+                        this.control_memory.put("chat_hide_interaction", false);
+                    }
+                }
             }
-        }else{
-            if(this.control_memory.get("chat_interaction")) {
-                this.control_memory.put("chat_interaction",false);
+            if (this.controller.ChatInteraction()) {
+                if (!(boolean)this.control_memory.get("chat_interaction")) {
+                    if((boolean)this.control_memory.get("chat_line_open")){
+                        this.control_memory.put("chat_line_open",false); // Close chat line, send message
+                    }else{
+                        this.control_memory.put("chat_line_open",true); // Open chat line
+                        String buffer = ((String)this.control_memory.get("chat_line_buffer"));
+                        if(!buffer.isEmpty()){
+                            this.SendMessage(buffer);
+                        }
+                    }
+                    this.control_memory.put("chat_interaction", true);
+                }
+            } else {
+                if ((boolean)this.control_memory.get("chat_interaction")) {
+                    this.control_memory.put("chat_interaction", false);
+                }
             }
         }
     }
     public void Tick(boolean render){
         Debug("  - Tick");
-        this.PullData();
-        this.CheckOrders();
-        this.CheckMessages();
+        milli_time = System.currentTimeMillis();
+        Debug(milli_time+"");
+        if(this.active_connection != null) {
+            this.PullData();
+            this.CheckOrders();
+            this.CheckMessages();
+        }
 
         this.Control();
 
