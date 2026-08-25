@@ -1,0 +1,224 @@
+Init server [main]...
+Loading levels in maps...
+ - level_01.map...
+   - Loaded map: level_01
+ - level_02.map...
+   - Loaded map: level_02
+ - level_03.map...
+   - Loaded map: level_03
+ - level_04.map...
+   - Loaded map: level_04
+ - level_05.map...
+   - Loaded map: level_05
+Done!
+- Init server thread, loading...
+- Starting loop
+Delay: 1.019368
+  - Tick
+    - Check input packages:
+Delay: 1.0371160000000001
+  - Tick
+    - Check input packages:
+Delay: 1.0340260000000001
+  - Tick
+    - Check input packages:
+Delay: 1.011276
+  - Tick
+    - Check input packages:
+Connection: player...
+Done!
+Delay: 1.02797
+  - Tick
+    - Check input packages:
+      - player
+        - {order=get_map}
+          - Complete order: get_map from player
+Delay: 1.007494
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.004928
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.007882
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0102799999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.011738
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0049539999999997
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0486859999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0335819999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0089539999999997
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0027519999999996
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.004776
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0003699999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.029506
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0305939999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.02019
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0115839999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0006659999999998
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0260439999999997
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0390599999999997
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0341499999999995
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0011839999999992
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0010839999999992
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0119459999999991
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0257659999999993
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.007263999999999
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0145319999999989
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0291279999999992
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0573839999999992
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.014191999999999
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.000549999999999
+  - Tick
+    - Check input packages:
+      - player
+        - {message=fal.game.network.Message@633b7f59}
+Provide message from player: PENIS
+      - player
+[2026-8-25.15-40-44] player: PENIS
+Delay: 1.0313499999999989
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0056039999999988
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0368999999999993
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0081139999999993
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.036279999999999
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.0106939999999989
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Delay: 1.008091999999999
+  - Tick
+    - Check input packages:
+      - player
+        - There is no packages
+Deleting...

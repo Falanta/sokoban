@@ -17,7 +17,7 @@ public class Tile {
     public Tile(String texture_name, ArrayList<String> logic_tags){
         Debug("Loading tile: "+texture_name);
         if(texture_name != null) {
-            this.texture = manager.getRegion(texture_name);
+            this.texture = manager.GetRegion(texture_name);
             if(this.texture == null){
                 Debug(" - Texture is null");
             }else{

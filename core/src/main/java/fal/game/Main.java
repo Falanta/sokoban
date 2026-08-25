@@ -1,11 +1,8 @@
 package fal.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
+
+import java.time.format.DateTimeFormatter;
 
 import fal.game.network.CSConnection;
 
@@ -14,6 +11,7 @@ public class Main extends ApplicationAdapter {
     public Server main_server;
     public Client player_client;
     public CSConnection single_connection;
+    public static final DateTimeFormatter time_formatter = DateTimeFormatter.ofPattern("y-M-d.HH-mm-ss");
     public static void Debug(String text){
         System.out.println(text);
     }
@@ -30,13 +28,13 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
-        player_client.Render();
+        player_client.Tick(true);
     }
 
     @Override
     public void dispose() {
         Debug("Shut down...");
-        main_server = main_server.Delete();
-        player_client = player_client.Delete();
+        main_server.Delete();
+        player_client.Delete();
     }
 }

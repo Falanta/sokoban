@@ -44,4 +44,8 @@ public class KeyboardControl implements PlayerController {
     public boolean CameraZoomOut() {
         return Gdx.input.isKeyPressed(Input.Keys.E);
     }
+    @Override
+    public boolean ChatInteraction() {
+        return Gdx.input.isKeyPressed(Input.Keys.ENTER);
+    }
 }

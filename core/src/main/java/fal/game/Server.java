@@ -1,15 +1,22 @@
 package fal.game;
 
+import static fal.game.Main.time_formatter;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Vector2;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Objects;
 
 import fal.game.network.CSConnection;
 import fal.game.network.DataPackage;
+import fal.game.network.Message;
 import fal.game.world.LevelMap;
 import fal.game.world.World;
 
@@ -21,12 +28,23 @@ public class Server implements Runnable{
     public short actual_tps;
     private short tick_counter = 0;
     private long tick_timer = System.nanoTime();
+    private ArrayList<String> log = new ArrayList<String>();
     private final String debug_prefix;
     private Map<String, CSConnection> connections;
     public World world;
     public HashMap<String, LevelMap> levels_list = new HashMap<>();
     private void Debug(String text){
         Main.Debug(this.debug_prefix+text);
+        this.log.add(text+"\n");
+    }
+    private void SaveLogs(){
+        FileHandle file = Gdx.files.local(String.format("logs/%s.txt",time_formatter.format(Instant.ofEpochMilli(System.currentTimeMillis()).atZone(ZoneId.systemDefault()))));
+        StringBuilder log_string = new StringBuilder();
+        for(String str : this.log){
+            Main.Debug(str);
+            log_string.append(str);
+        }
+        file.writeString(log_string.toString(), false);
     }
     public void LoadLevels(String path){
         Debug(String.format("Loading levels in %s...",path));
@@ -63,13 +81,7 @@ public class Server implements Runnable{
         this.LoadLevels("maps");
 
         this.world = new World();
-//        this.world.map.GenerateEmpty(new Vector2(5,5));
-//        this.world.map.Set(new Vector2(0,0),new LevelMap.Cell("stone", (short) 0, (short) 0));
-//        this.world.map.Set(new Vector2(4,4),new LevelMap.Cell("stone", (short) 4, (short) 4));
-//        this.world.map.loaded = true;
-//        this.world.map.PrintMatrix();
-        this.world.map = this.levels_list.get("level_01");
-        this.world.map.Set(new Vector2(0,0),new LevelMap.Cell("stone", (short) 0, (short) 0));
+        this.world.map = this.levels_list.get("level_05");
 
         Debug("Done!");
     }
@@ -82,7 +94,7 @@ public class Server implements Runnable{
     public void Kick(String player_id){
         if(this.connections.containsKey(player_id)){
             CSConnection selected_connection = this.connections.get(player_id);
-            Debug(String.format("Kicking: %s...",selected_connection.client.id));
+            Debug(String.format("Kicking: %s...",selected_connection.client_name));
             selected_connection.Delete("kick");
         }else{
             Debug("Error: there is no "+player_id);
@@ -91,7 +103,7 @@ public class Server implements Runnable{
     public void DeleteConnection(String player_id){
         if(this.connections.containsKey(player_id)){
             CSConnection selected_connection = this.connections.get(player_id);
-            Debug(String.format("Connection deleted: %s",selected_connection.client.id));
+            Debug(String.format("Connection deleted: %s",selected_connection.client_name));
             this.connections.remove(player_id);
         }else{
             Debug("Error: there is no "+player_id);
@@ -111,7 +123,6 @@ public class Server implements Runnable{
             unprocessed += (now - lastTime) / this.target_spt;
             lastTime = now;
             while (unprocessed >= 1.0) {
-                Debug("Delay: "+unprocessed);
                 this.Tick();
                 this.tick_counter ++;
                 unprocessed--;
@@ -147,11 +158,26 @@ public class Server implements Runnable{
                         if(input_package.data.containsKey("order")){
                             CompleteOrder((String)input_package.data.get("order"),player_id);
                         }
+                        if(input_package.data.containsKey("message")){
+                            ProvideMessage((Message)input_package.data.get("message"));
+                        }
                     }else{
                         Debug("        - Package is null");
                     }
                 }
             }
+        }
+    }
+    public void ProvideMessage(Message msg){
+        Debug(String.format("Provide message from %s: %s",msg.author,msg.content));
+        for(String player_id: connections.keySet()) {
+//            if(Objects.equals(player_id, msg.author)){continue;}
+            Debug("      - " + player_id);
+            Map data = new HashMap();
+            data.put("message."+msg.author,msg.Copy());
+            data.put("message",true);
+            this.log.add(msg.log_formatted+"\n");
+            this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
         }
     }
     public void CompleteOrder(String order_type, String player_id){
@@ -180,8 +206,10 @@ public class Server implements Runnable{
             }
         }
     }
-    public Server Delete(){
+    public void Delete(){
         Debug("Deleting...");
+        this.on = false;
+        this.SaveLogs();
 
         for(String player_id: connections.keySet()){
             Debug("- Kick "+player_id);
@@ -191,9 +219,6 @@ public class Server implements Runnable{
                 Debug("Error: "+e);
             }
         }
-        this.on = false;
-
         Debug("Done!");
-        return null;
     }
 }

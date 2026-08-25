@@ -2,10 +2,16 @@ package fal.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.FileHandleResolver;
+import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
+import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -20,23 +26,49 @@ import fal.game.input.KeyboardControl;
 import fal.game.input.PlayerController;
 import fal.game.network.CSConnection;
 import fal.game.network.DataPackage;
+import fal.game.network.Message;
 import fal.game.render.Tile;
+import fal.game.render.UI;
 import fal.game.world.LevelMap;
 import fal.game.world.World;
 
 public class Client {
     public static class ResourceManager {
-        private final AssetManager assetManager;
+        public final AssetManager assetManager;
         private TextureAtlas atlas;
         public ResourceManager() {
             assetManager = new AssetManager();
+
+            FileHandleResolver resolver = new InternalFileHandleResolver();
+            assetManager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
+            assetManager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         }
-        public void loadAll() {
+        public void LoadFont(String path, int size) {
+            fal.game.Main.Debug(String.format("Loading font %s",path));
+            fal.game.Main.Debug(String.format("- File exists: %s",Gdx.files.internal("fonts/regular.ttf").exists()));
+            FreetypeFontLoader.FreeTypeFontLoaderParameter fontParams = new FreetypeFontLoader.FreeTypeFontLoaderParameter();
+            fontParams.fontFileName = path;
+            fontParams.fontParameters.size = size;
+            fontParams.fontParameters.genMipMaps = false;
+            fontParams.fontParameters.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
+            fontParams.fontParameters.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
+            fontParams.fontParameters.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";;
+            assetManager.load(path, BitmapFont.class, fontParams);
+        }
+        public void LoadAll() {
+            fal.game.Main.Debug("Loading assets...");
             assetManager.load("assets/atlas/main_atlas.atlas", TextureAtlas.class);
+            LoadFont("fonts/regular.ttf",16);
+            LoadFont("fonts/consolas.ttf",12);
             assetManager.finishLoading();
             atlas = assetManager.get("assets/atlas/main_atlas.atlas", TextureAtlas.class);
+            fal.game.Main.Debug(String.format("Done! Assets (%s):",assetManager.getLoadedAssets()));
+            for (String fileName : assetManager.getAssetNames()) {
+                Class<?> type = assetManager.getAssetType(fileName);
+                fal.game.Main.Debug(String.format("%s <%s>",fileName,type.getSimpleName()));
+            }
         }
-        public TextureRegion getRegion(String name) {
+        public TextureRegion GetRegion(String name) {
             TextureAtlas.AtlasRegion region = atlas.findRegion(name);
             if (region == null) {
                 throw new IllegalArgumentException("Unknown texture: "+name);
@@ -87,17 +119,21 @@ public class Client {
         }
     }
     private final String debug_prefix;
-    private SpriteBatch batch;
+    public SpriteBatch batch;
     public static ResourceManager manager;
-    private CSConnection active_connection;
-    private short last_tps;
+    public CSConnection active_connection;
+    public short last_tps;
+    public int actual_fps;
     public String id;
     public Map last_data;
     public ArrayList<String> waiting_orders = new ArrayList<String>();
+    public ArrayList<Message> chat = new ArrayList<Message>();
     public World world;
     public Camera cam;
+    public UI main_interface = new UI(this);
     public Map<String,Tile> tiles_pallete;
     public PlayerController controller;
+    private Map<String,Boolean> control_memory = new HashMap<>();
     private void Debug(String text){
         Main.Debug(this.debug_prefix+text);
     }
@@ -107,6 +143,7 @@ public class Client {
 
         this.controller = new KeyboardControl();
         this.cam = new Camera(this.controller);
+        this.control_memory.put("chat_interaction",false);
 
         this.id = id;
         this.active_connection = null;
@@ -126,7 +163,7 @@ public class Client {
         );
 
         this.manager = new ResourceManager();
-        this.manager.loadAll();
+        this.manager.LoadAll();
 
         Debug("- Loading tiles...");
         this.tiles_pallete = new HashMap<>();
@@ -134,6 +171,8 @@ public class Client {
         this.tiles_pallete.get("template").size = new Vector2(12,12);
         this.tiles_pallete.put("stone",new Tile("stone",new ArrayList<>(Arrays.asList("solid"))));
         this.tiles_pallete.put("wooden_floor",new Tile("wooden_floor",new ArrayList<>(Arrays.asList())));
+        this.tiles_pallete.put("wooden_wall",new Tile("wooden_wall",new ArrayList<>(Arrays.asList("solid"))));
+        this.tiles_pallete.put("stone_floor",new Tile("stone_floor",new ArrayList<>(Arrays.asList())));
         Debug("  - "+this.tiles_pallete.toString());
 
         this.world = new World();
@@ -149,11 +188,25 @@ public class Client {
         Debug("Done!");
     }
     public void Leave(){
-        Debug(String.format("Leaving: %s...",active_connection.server.id));
+        Debug(String.format("Leaving: %s...",active_connection.server_name));
         this.active_connection.Delete("leave");
     }
+    public void SendMessage(String text){
+        Debug(String.format("- Send message: %s",text));
+        Message msg = new Message(this.id,text);
+        this.SendToChat(msg);
+        Map data = new HashMap();
+        data.put("message",msg.Copy());
+        this.active_connection.CSQueue.offer(new DataPackage(this.id,data));
+    }
+    public void SendToChat(Message msg){
+        this.chat.add(msg);
+        if(this.chat.size() >= 10){
+            this.chat.remove(0);
+        }
+    }
     public void DeleteConnection(){
-        Debug(String.format("Connection deleted: %s",active_connection.server.id));
+        Debug(String.format("Connection deleted: %s",active_connection.server_name));
         this.active_connection = null;
     }
     public void PullData(){
@@ -212,6 +265,32 @@ public class Client {
             }
         }
     }
+    public void CheckMessages(){
+        Debug("- Check messages");
+        if(this.last_data.containsKey("message")) {
+            Iterator<String> input_iterator = ((Map<String,Object>)last_data).keySet().iterator();
+            while(input_iterator.hasNext()) {
+                String input = input_iterator.next();
+                if(input.contains("message.")){
+                    Debug(input);
+                    Message msg = (Message)this.last_data.get(input);
+                    Debug(msg.log_formatted);
+                    this.SendToChat(msg);
+                    input_iterator.remove();
+                }
+            }
+            this.last_data.remove("message");
+        }else{
+            Debug("There is no messages");
+        }
+    }
+    public void RenderUI(){
+        this.batch.setProjectionMatrix(this.main_interface.ui_viewport.getCamera().combined);
+        this.batch.begin();
+        this.main_interface.DrawDebugInformation();
+        this.main_interface.DrawChat();
+        this.batch.end();
+    }
     public void RenderMap(Vector2 offset){
         float tile_size_x = this.tiles_pallete.get("template").size.x;
         float tile_size_y = this.tiles_pallete.get("template").size.y;
@@ -223,16 +302,14 @@ public class Client {
                 }
             }
         }
-        TextureRegion shadowTexture = manager.getRegion("pixel_black");
+        TextureRegion shadowTexture = manager.GetRegion("pixel_black");
         batch.setColor(0, 0, 0, 0.3f);
         for(short y = 0; y < this.world.map.size.y; y++){
             for(short x = 0; x < this.world.map.size.x; x++){
                 LevelMap.Cell cell = this.world.map.Get(new Vector2(x,y));
                 if(cell != null && tiles_pallete.get(cell.type).solid) {
-
-                    // Рендерим тень со смещением +2 по X и -2 по Y
-                    float drawX = x * tile_size_x + offset.x + 1;
-                    float drawY = -y * tile_size_y + offset.y - 1;
+                    float drawX = x * tile_size_x + offset.x + 3;
+                    float drawY = -y * tile_size_y + offset.y - 3;
                     batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
                 }
             }
@@ -247,32 +324,47 @@ public class Client {
             }
         }
     }
-    public void Render(){
-        Debug("  - Render");
+    public void Control(){
+        if(this.controller.ChatInteraction()){
+            if(!this.control_memory.get("chat_interaction")) {
+                this.SendMessage("PENIS");
+                this.control_memory.put("chat_interaction",true);
+            }
+        }else{
+            if(this.control_memory.get("chat_interaction")) {
+                this.control_memory.put("chat_interaction",false);
+            }
+        }
+    }
+    public void Tick(boolean render){
+        Debug("  - Tick");
         this.PullData();
         this.CheckOrders();
+        this.CheckMessages();
 
-        int actual_fps = Gdx.graphics.getFramesPerSecond();
+        this.Control();
+
+        this.actual_fps = Gdx.graphics.getFramesPerSecond();
         this.last_tps = (short) ((this.ReadData("tps") == null)?(short)-1:this.ReadData("tps"));
 
-        Debug("    - FPS: "+actual_fps);
-        Debug("    - TPS: "+this.last_tps);
+        if(render) {
+            this.cam.Update();
 
-        this.cam.Update();
-
-        ScreenUtils.clear(0.15f, 0.15f, 0.15f, 1f);
-        batch.setProjectionMatrix(this.cam.camera.combined);
-        batch.begin();
-        if(this.world.map.loaded){
-            this.RenderMap(new Vector2(50,50));
+            ScreenUtils.clear(0.15f, 0.15f, 0.15f, 1f);
+            batch.setProjectionMatrix(this.cam.camera.combined);
+            batch.begin();
+            if (this.world.map.loaded) {
+                this.RenderMap(new Vector2(50, 50));
+            }
+            batch.end();
+            this.RenderUI();
         }
-        batch.end();
     }
-    public Client Delete(){
+    public void Delete(){
         Debug("Deleting...");
 
         if(active_connection != null && active_connection.server != null) {
-            Debug("- Leaving " + active_connection.server.id);
+            Debug("- Leaving " + active_connection.server_name);
             try {
                 this.Leave();
             } catch (Exception e) {
@@ -281,9 +373,8 @@ public class Client {
         }
 
         this.batch.dispose();
-        this.manager.dispose();
+        manager.dispose();
 
         Debug("Done!");
-        return null;
     }
 }
