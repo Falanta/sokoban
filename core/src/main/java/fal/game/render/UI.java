@@ -60,7 +60,7 @@ public class UI {
         if(milli_time%1000>500){
             this.chat_line_builder.append(".");
         }
-        this.DrawTextBuilder(this.chat_line_builder,new Vector2(-this.ui_size.x/2+1,-this.ui_size.y/2+11),1.0f,9,"fonts/consolas.ttf");
+        this.DrawTextBuilder(this.chat_line_builder,new Vector2(-this.ui_size.x/2+1,-this.ui_size.y/2+11),1.0f,9,"fonts/regular.ttf");
     }
     public void DrawDebugInformation(){
         this.debug_info_builder.setLength(0);
@@ -73,7 +73,7 @@ public class UI {
         for(Message msg: this.owner.chat){
             this.chat_builder.append(msg.formatted).append("\n");
         }
-        this.DrawTextBuilder(this.chat_builder,new Vector2(-this.ui_size.x/2+1,0),1.0f,9,"fonts/consolas.ttf");
+        this.DrawTextBuilder(this.chat_builder,new Vector2(-this.ui_size.x/2+1,0),1.0f,10,"fonts/regular.ttf");
 //        this.container_styles.get("button").Draw(this.owner.batch,new Vector2(-this.ui_size.x/2+6,-this.ui_size.y/2+6),new Vector2(25,25),new Color(1,1,1,1),2);
     }
 }

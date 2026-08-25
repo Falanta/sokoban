@@ -1,6 +1,7 @@
 package fal.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
@@ -128,6 +129,7 @@ public class Client {
         Debug(String.format("Init client [%s]...",id));
 
         this.controller = controller;
+        Gdx.input.setInputProcessor((InputProcessor) controller);
         this.cam = new Camera();
 
         this.control_memory.put("chat_hide_interaction",false);
@@ -285,7 +287,7 @@ public class Client {
             this.main_interface.DrawChat();
         }
         if((boolean)this.control_memory.get("chat_line_open")){
-            this.main_interface.DrawChatLine("GOVNO"+this.control_memory.get("chat_line_buffer"));
+            this.main_interface.DrawChatLine(""+this.control_memory.get("chat_line_buffer"));
         }
         this.batch.end();
     }
@@ -332,54 +334,53 @@ public class Client {
         }
     }
     public void Control(){
-        if(this.controller != null) {
-            if(!(boolean)this.control_memory.get("chat_line_open")){
-                if(this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()){
-                    this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed,1.0f);
-                } else if(!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()){
-                    this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed,0.25f);
-                }
-                if(this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()){
-                    this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed*this.cam.zoom,200.0f);
-                } else if(!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()){
-                    this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed*this.cam.zoom,-100.0f);
-                }
-                if(this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()){
-                    this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed*this.cam.zoom,200.0f);
-                } else if(!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()){
-                    this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed*this.cam.zoom,-100.0f);
-                }
-                if (this.controller.ChatHideInteraction()) {
-                    if (!(boolean)this.control_memory.get("chat_hide_interaction")) {
-                        if((boolean)this.control_memory.get("chat_hide")){
-                            this.control_memory.put("chat_hide",false); // Hide chat
-                        }else{
-                            this.control_memory.put("chat_hide",true); // Show chat
-                        }
-                        this.control_memory.put("chat_hide_interaction", true);
-                    }
-                } else {
-                    if ((boolean)this.control_memory.get("chat_hide_interaction")) {
-                        this.control_memory.put("chat_hide_interaction", false);
+        if(this.controller == null) {return;}
+        boolean chatLineOpen = (boolean) this.control_memory.get("chat_line_open");
+        if(!chatLineOpen){
+            if(this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()){
+                this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed,1.0f);
+            } else if(!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()){
+                this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed,0.25f);
+            }
+            if(this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()){
+                this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed*this.cam.zoom,200.0f);
+            } else if(!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()){
+                this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed*this.cam.zoom,-100.0f);
+            }
+            if(this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()){
+                this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed*this.cam.zoom,200.0f);
+            } else if(!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()){
+                this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed*this.cam.zoom,-100.0f);
+            }
+            if (this.controller.ChatHideInteraction()) {
+                if (!(boolean) this.control_memory.get("chat_hide_interaction")) {
+                    if ((boolean) this.control_memory.get("chat_hide")) {
+                        this.control_memory.put("chat_hide", false); // Hide chat
+                    } else {
+                        this.control_memory.put("chat_hide", true); // Show chat
                     }
                 }
             }
-            if (this.controller.ChatInteraction()) {
-                if (!(boolean)this.control_memory.get("chat_interaction")) {
-                    if((boolean)this.control_memory.get("chat_line_open")){
-                        this.control_memory.put("chat_line_open",false); // Close chat line, send message
-                    }else{
-                        this.control_memory.put("chat_line_open",true); // Open chat line
-                        String buffer = ((String)this.control_memory.get("chat_line_buffer"));
-                        if(!buffer.isEmpty()){
-                            this.SendMessage(buffer);
-                        }
-                    }
-                    this.control_memory.put("chat_interaction", true);
+        }else{
+            if (this.controller instanceof KeyboardControl) {
+                this.control_memory.put("chat_line_buffer", ((KeyboardControl) this.controller).typedBuffer.toString());
+            }
+        }
+        if (this.controller.ChatInteraction()) {
+            if((boolean)this.control_memory.get("chat_line_open")){
+                this.control_memory.put("chat_line_open",false); // Close chat line, send message
+                String buffer = ((String)this.control_memory.get("chat_line_buffer"));
+                if(!buffer.isEmpty()){
+                    this.SendMessage(buffer);
                 }
-            } else {
-                if ((boolean)this.control_memory.get("chat_interaction")) {
-                    this.control_memory.put("chat_interaction", false);
+                this.control_memory.put("chat_line_buffer","");
+                if (this.controller instanceof KeyboardControl) {
+                    ((KeyboardControl) this.controller).setChatting(false);
+                }
+            }else{
+                this.control_memory.put("chat_line_open",true); // Open chat line
+                if (this.controller instanceof KeyboardControl) {
+                    ((KeyboardControl) this.controller).setChatting(true);
                 }
             }
         }
