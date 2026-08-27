@@ -13,6 +13,7 @@ public class Main extends ApplicationAdapter {
     public Client player_client;
     public CSConnection single_connection;
     public static final DateTimeFormatter time_formatter = DateTimeFormatter.ofPattern("y-M-d.HH-mm-ss");
+    public static final DateTimeFormatter statistic_timer = DateTimeFormatter.ofPattern("y-M-d.HH-mm-ss-SS");
     public static void Debug(String text){
         System.out.println(text);
     }

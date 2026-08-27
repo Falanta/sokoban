@@ -2,6 +2,8 @@ package fal.game.render;
 
 import static fal.game.Client.manager;
 import static fal.game.Client.milli_time;
+import static fal.game.Main.statistic_timer;
+import static fal.game.Main.time_formatter;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -12,6 +14,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,6 +29,7 @@ public class UI {
     public Vector2 ui_size = new Vector2(480.0f,250.0f);
     private final Client owner;
     private final StringBuilder debug_info_builder = new StringBuilder();
+    private final StringBuilder level_info_builder = new StringBuilder();
     private final StringBuilder chat_builder = new StringBuilder();
     private final StringBuilder chat_line_builder = new StringBuilder();
     private final GlyphLayout glyphLayout = new GlyphLayout();
@@ -70,6 +75,20 @@ public class UI {
         font.draw(this.owner.batch,text,pos.x,pos.y);
         font.getData().setScale(1.0f);
     }
+    public String FormatTime(long time){
+        long totalSeconds = time / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        long ms = time % 1000;
+        if (hours > 0) {
+            return String.format("%d:%02d:%02d:%03d", hours, minutes, seconds, ms);
+        } else if (minutes > 0) {
+            return String.format("%d:%02d:%03d", minutes, seconds, ms);
+        } else {
+            return String.format("%02d:%03d", seconds, ms);
+        }
+    }
     public UI(Client owner){
         this.owner = owner;
 
@@ -90,6 +109,18 @@ public class UI {
             this.chat_line_builder.append(".");
         }
         this.DrawTextBuilder(this.chat_line_builder,new Vector2(-this.ui_size.x/2+1,-this.ui_size.y/2+11),1.0f,9,"fonts/consolas.ttf",this.text_shadow);
+    }
+    public void DrawLevelInformation(){
+        this.level_info_builder.setLength(0);
+        this.level_info_builder
+            .append("Level: ")
+            .append(this.owner.world.map.name)
+            .append("\nTime: ")
+            .append(FormatTime(this.owner.state.actual_time))
+            .append("\nMoves: ")
+            .append(this.owner.state.move_counter);
+
+        this.DrawTextBuilder(this.level_info_builder,new Vector2(0,this.ui_size.y/2-1),1.0f,9,"fonts/consolas.ttf",this.text_shadow);
     }
     public void DrawDebugInformation(){
         this.debug_info_builder.setLength(0);

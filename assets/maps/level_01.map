@@ -5,4 +5,4 @@
 #---------#
 ###########
 {"action":"spawn","type":"crate","pos":[5,2],"texture":"tiles/crate_02_d"}
-{"action":"spawn","type":"anchor","pos":[7,2],"texture":"tiles/template"}
+{"action":"spawn","type":"anchor","pos":[7,2],"texture":"tiles/anchor"}

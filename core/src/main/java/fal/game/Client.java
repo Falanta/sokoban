@@ -50,6 +50,10 @@ public class Client {
         public boolean chat_line_open = false;
         public String chat_line_buffer = "";
         public String skin_texture = "player_welp";
+        public int move_counter = -1;
+        public long actual_time = 0;
+        public long start_time = 0;
+        public boolean level_running = false;
         public ClientState(){
         }
     }
@@ -222,7 +226,7 @@ public class Client {
         this.active_connection = connection;
 
         this.MakeOrder("get_map",true);
-
+        this.ResetLevel();
         Debug("Done!");
     }
     public void Leave(){
@@ -397,6 +401,23 @@ public class Client {
             //Debug("There is no messages");
         }
     }
+    public void ResetLevel(){
+        this.state.move_counter = 0;
+        this.state.start_time = System.currentTimeMillis();
+        this.state.actual_time = 0;
+        this.state.level_running = true;
+    }
+    public boolean CheckEndGame(){
+        for(Body body: this.world.bodies.values()){
+            if(body.type.equals("crate") && (body.texture.charAt(body.texture.length()-1)=='d')){
+                return false;
+            }
+        }
+        return true;
+    }
+    public void UpdateTime(){
+        this.state.actual_time = System.currentTimeMillis()-this.state.start_time;
+    }
     public float PosterizeNum(float num){
         return Math.round(num/2)*2;
     }
@@ -460,6 +481,24 @@ public class Client {
                     arg_iterator.remove();
                     break;
                 }
+                case "move_count": {
+                    Debug("- Move count");
+                    if(input_data == null){
+                        if(this.state.level_running) {
+                            this.state.move_counter += 1;
+                        }
+                    }else{
+                        this.state.move_counter = (int)input_data;
+                    }
+                    arg_iterator.remove();
+                    break;
+                }
+                case "reset_level": {
+                    Debug("- Reset level");
+                    this.ResetLevel();
+                    arg_iterator.remove();
+                    break;
+                }
                 case "tps": {
                     this.last_tps = ((input_data == null) ? (short) -1 : (short) input_data);
                     break;
@@ -471,6 +510,9 @@ public class Client {
         this.batch.setProjectionMatrix(this.main_interface.ui_viewport.getCamera().combined);
         this.batch.begin();
         this.main_interface.DrawDebugInformation();
+        if(this.active_connection != null) {
+            this.main_interface.DrawLevelInformation();
+        }
         if(!this.state.chat_hide) {
             this.main_interface.DrawChat();
         }
@@ -479,18 +521,30 @@ public class Client {
         }
         this.batch.end();
     }
+    public void RenderBody(Body body, int offset_x,int offset_y){
+        body.UpdateDrawPos(0.9f);
+        this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
+        if(body.show_name){
+            this.main_interface.DrawTextCentered(body.id,new Vector2(PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y),1f,10,"fonts/consolas.ttf",false);
+        }
+    }
     public void RenderBodies(int offset_x, int offset_y){
         List<String> sorted_bodies = this.world.bodies.keySet().stream()
-            .sorted(Comparator.comparing((String id) -> !this.world.bodies.get(id).solid)
-                .thenComparing(id -> "player".equals(this.world.bodies.get(id).type)))
+            .sorted(Comparator.comparingInt((String id) -> {
+                    Body body = this.world.bodies.get(id);
+                    if ("player".equals(body.type)) {
+                        return 2;
+                    }
+                    if (body.solid) {
+                        return 1;
+                    }
+                    return 0;
+                })
+                .thenComparing(id -> id))
             .collect(Collectors.toList());
-        for(String id: sorted_bodies){
-            Body body = this.world.bodies.get(id);
-            body.UpdateDrawPos(0.9f);
-            this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
-            if(body.show_name){
-                this.main_interface.DrawTextCentered(body.id,new Vector2(PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y),1f,10,"fonts/consolas.ttf",false);
-            }
+
+        for(String body_id : sorted_bodies){
+            this.RenderBody(this.world.bodies.get(body_id), offset_x, offset_y);
         }
     }
     public void RenderMap(int offset_x, int offset_y){
@@ -613,6 +667,13 @@ public class Client {
             this.CheckOrders();
 //            this.CheckData();
             this.CheckMessages();
+        }
+        if(this.state.level_running){
+            if(this.CheckEndGame()){
+                this.state.level_running = false;
+            }else {
+                this.UpdateTime();
+            }
         }
 
         this.Control();

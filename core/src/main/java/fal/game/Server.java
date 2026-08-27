@@ -343,6 +343,20 @@ public class Server implements Runnable{
             }
         }
     }
+    public void SetMoveCounter(String player_id, Integer value){
+        this.UpdateBodyPos(player_id);
+        Map data = new HashMap();
+        data.put("move_count",value);
+        Debug("    - "+data.toString());
+        this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+    }
+    public void ResetLevel(String player_id){
+        this.UpdateBodyPos(player_id);
+        Map data = new HashMap();
+        data.put("reset_level",true);
+        Debug("    - "+data.toString());
+        this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+    }
 
     @Override
     public void run() {
@@ -404,6 +418,7 @@ public class Server implements Runnable{
                                 case "move": {
                                     if (this.players.get(player_id).Move((String) input_data)) {
                                         this.UpdateBodyPos(player_id);
+                                        this.SetMoveCounter(player_id,null);
                                     }
                                     break;
                                 }
@@ -472,6 +487,7 @@ public class Server implements Runnable{
             String texture_name = this.players.get(player_id).body.texture;
             DeletePlayer(player_id);
             SpawnPlayer(player_id,texture_name);
+            ResetLevel(player_id);
         }
     }
     public void CompleteOrder(String order_type, String player_id){
