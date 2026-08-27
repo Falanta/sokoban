@@ -1,4 +1,4 @@
-{"assets":{"#":"stone","-":"stone_floor","x":"wooden_floor"},"size":[13,7]}
+{"assets":{"#":"bricks_wall","-":"plastic_floor","x":"wooden_floor","x":"wooden_floor"},"size":[13,7]}
 #############
 #xxxxx#-----#
 #xxxxx------#

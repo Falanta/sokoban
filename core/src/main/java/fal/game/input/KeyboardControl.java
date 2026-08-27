@@ -31,10 +31,10 @@ public class KeyboardControl extends InputAdapter implements PlayerController {
         }
         return false;
     }
-    @Override public boolean MoveUp() { return Gdx.input.isKeyPressed(Input.Keys.UP); }
-    @Override public boolean MoveDown() { return Gdx.input.isKeyPressed(Input.Keys.DOWN); }
-    @Override public boolean MoveLeft() { return Gdx.input.isKeyPressed(Input.Keys.LEFT); }
-    @Override public boolean MoveRight() { return Gdx.input.isKeyPressed(Input.Keys.RIGHT); }
+    @Override public boolean MoveUp() { return Gdx.input.isKeyJustPressed(Input.Keys.UP); }
+    @Override public boolean MoveDown() { return Gdx.input.isKeyJustPressed(Input.Keys.DOWN); }
+    @Override public boolean MoveLeft() { return Gdx.input.isKeyJustPressed(Input.Keys.LEFT); }
+    @Override public boolean MoveRight() { return Gdx.input.isKeyJustPressed(Input.Keys.RIGHT); }
     @Override public boolean CameraMoveUp() { return Gdx.input.isKeyPressed(Input.Keys.W); }
     @Override public boolean CameraMoveDown() { return Gdx.input.isKeyPressed(Input.Keys.S); }
     @Override public boolean CameraMoveLeft() { return Gdx.input.isKeyPressed(Input.Keys.A); }

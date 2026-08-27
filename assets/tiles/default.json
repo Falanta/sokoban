@@ -1,0 +1,34 @@
+{
+  "stone_wall": {
+    "texture": "tiles/stone_wall",
+    "solid": true
+  },
+  "stone_floor": {
+    "texture": "tiles/stone_floor",
+    "solid": false
+  },
+  "wooden_wall": {
+    "texture": "tiles/wooden_wall",
+    "solid": true
+  },
+  "wooden_floor": {
+    "texture": "tiles/wooden_floor",
+    "solid": false
+  },
+  "plastic_wall": {
+    "texture": "tiles/plastic_wall",
+    "solid": true
+  },
+  "plastic_floor": {
+    "texture": "tiles/plastic_floor",
+    "solid": false
+  },
+  "plastic_tiles_wall": {
+    "texture": "tiles/plastic_tiles_wall",
+    "solid": true
+  },
+  "plastic_tiles_floor": {
+    "texture": "tiles/plastic_tiles_floor",
+    "solid": false
+  }
+}

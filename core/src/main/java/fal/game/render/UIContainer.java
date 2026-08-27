@@ -1,6 +1,7 @@
 package fal.game.render;
 
 import static fal.game.Client.manager;
+import static fal.game.Main.Debug;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -21,7 +22,13 @@ public class UIContainer {
     public TextureRegion base_texture;
     public UIContainer(String texture_name){
         this.texture_name = texture_name;
-        this.base_texture = manager.GetRegion(this.texture_name);
+        try {
+            this.base_texture = manager.GetRegion(this.texture_name);
+        }catch (Exception e){
+            Debug("Error: "+e);
+            this.base_texture = manager.GetRegion("styles/template_style");
+        }
+
 
         this.lu_corner = new TextureRegion(this.base_texture,0,0,2,2);
         this.ld_corner = new TextureRegion(this.base_texture,0,3,2,2);

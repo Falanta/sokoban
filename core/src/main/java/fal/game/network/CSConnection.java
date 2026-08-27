@@ -26,7 +26,7 @@ public class CSConnection {
     }
     public void Delete(String reason){
         Debug(String.format("Deleting connection %s & %s(%s); Reason: %s",server.toString(),this.client_name,client.toString(),reason));
-        this.client.DeleteConnection();
-        this.server.DeleteConnection(this.client_name);
+        this.client.DeleteConnection(reason);
+        this.server.DeleteConnection(this.client_name,reason);
     }
 }

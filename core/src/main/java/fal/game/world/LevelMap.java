@@ -41,8 +41,9 @@ public class LevelMap {
     public void Set(Vector2 pos,Cell value){
         this.matrix.get((short)pos.y).set((short)pos.x,value);
     }
-    public Cell Get(Vector2 pos){
-        return this.matrix.get((short)pos.y).get((short)pos.x);
+    public Cell Get(short x, short y){
+        if(x < 0 || y < 0 || x >= this.size.x || y >= this.size.y){return null;}
+        return this.matrix.get(y).get(x);
     }
     public void PrintMatrix(){
         Debug(" - Print map "+this.name);

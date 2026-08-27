@@ -1,0 +1,136 @@
+
+main_atlas.png
+size: 16, 16
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+pixel_black
+  rotate: false
+  xy: 1, 1
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+
+main_atlas2.png
+size: 16, 16
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+entities/player_welp
+  rotate: false
+  xy: 1, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+
+main_atlas3.png
+size: 16, 16
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+styles/container_button
+  rotate: false
+  xy: 1, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/template_style
+  rotate: false
+  xy: 1, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+
+main_atlas4.png
+size: 256, 16
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+tiles/crate
+  rotate: false
+  xy: 1, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: 1
+tiles/crate_01_d
+  rotate: false
+  xy: 15, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/crate_01_e
+  rotate: false
+  xy: 29, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/plastic_floor
+  rotate: false
+  xy: 43, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/plastic_tiles_floor
+  rotate: false
+  xy: 57, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/plastic_tiles_wall
+  rotate: false
+  xy: 71, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/plastic_wall
+  rotate: false
+  xy: 85, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_floor
+  rotate: false
+  xy: 99, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_wall
+  rotate: false
+  xy: 113, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/template
+  rotate: false
+  xy: 127, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_floor
+  rotate: false
+  xy: 141, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_wall
+  rotate: false
+  xy: 155, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
