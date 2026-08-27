@@ -1,6 +1,8 @@
-{"assets":{"#":"stone","-":"plastic_floor"},"size":[11,5]}
+{"assets":{"#":"stone_wall","-":"stone_plate_alt_floor"},"size":[11,5],"spawn_pos":[2,2]}
 ###########
 #---------#
 #---------#
 #---------#
 ###########
+{"action":"spawn","type":"crate","pos":[5,2],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"anchor","pos":[7,2],"texture":"tiles/template"}

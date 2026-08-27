@@ -13,6 +13,8 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -20,12 +22,56 @@ import java.util.Objects;
 import fal.game.network.CSConnection;
 import fal.game.network.DataPackage;
 import fal.game.network.Message;
-import fal.game.render.Tile;
+import fal.game.world.Body;
 import fal.game.world.LevelMap;
-import fal.game.world.PlayerAvatar;
 import fal.game.world.World;
 
 public class Server implements Runnable{
+    public class PlayerAvatar {
+        public Body body;
+        public String name;
+        public World world;
+        public Server server;
+
+        public PlayerAvatar(Server server, World world, String name) {
+            this.server = server;
+            this.world = world;
+            this.name = name;
+            this.body = new Body(this.world,"player", new Vector2(0, 0), null);
+        }
+        public boolean Move(String direction) {
+            if(this.body.IsBlockedTile(direction)){
+                return false;
+            }
+            Body pushing = this.body.IsBlockedBody(direction);
+            if(pushing != null){
+                if(pushing.IsBlockedTile(direction)){return false;}
+                if(pushing.IsBlockedBody(direction)!=null){return false;}
+                pushing.ForceMove(direction);
+                this.server.UpdateBody(pushing.id);
+                this.server.UpdateBodyPos(pushing.id);
+            }
+            switch (direction) {
+                case "up": {
+                    this.body.pos.y -= 1.0f;
+                    return true;
+                }
+                case "down": {
+                    this.body.pos.y += 1.0f;
+                    return true;
+                }
+                case "left": {
+                    this.body.pos.x -= 1.0f;
+                    return true;
+                }
+                case "right": {
+                    this.body.pos.x += 1.0f;
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
     public String id;
     public volatile boolean on;
     public short target_tps; // Количество кадров логики в 1 секунду (ticks per second)
@@ -37,8 +83,9 @@ public class Server implements Runnable{
     private final String debug_prefix;
     private Map<String, CSConnection> connections;
     public World world;
-    public static Map<String,Tile> tiles_info;
-    public HashMap<String, LevelMap> levels_list = new HashMap<>();
+    public Map<String,PlayerAvatar> players = new HashMap<>();
+    public static Map<String,Boolean> tiles_info;
+    public HashMap<String, LevelMap> levels_list = new LinkedHashMap<>();
     private void Debug(String text){
         Main.Debug(this.debug_prefix+text);
         this.log.add(text+"\n");
@@ -66,6 +113,7 @@ public class Server implements Runnable{
                 LevelMap map = new LevelMap(file_name);
                 map.LoadFromFile(file);
                 levels_list.put(file_name, map);
+                levels_list.get(file_name).path = file.path();
                 Debug("   - Loaded map: " + file_name);
                 map.PrintMatrix();
             }
@@ -73,8 +121,8 @@ public class Server implements Runnable{
     }
     public void LoadTiles(String path){
         Debug("- Loading tiles...");
-        this.tiles_info = new HashMap<>();
-        this.tiles_info.put("template",new Tile(null,true,false));
+        this.tiles_info = new HashMap<String,Boolean>();
+        this.tiles_info.put("template",true);
         FileHandle dir = Gdx.files.internal(path);
 
         if (!dir.exists() || !dir.isDirectory()) {
@@ -88,17 +136,34 @@ public class Server implements Runnable{
                 String file_name = file.nameWithoutExtension();
                 JsonValue root = jsonReader.parse(file.readString("UTF-8"));
                 for (JsonValue tile_object : root) {
-                    Debug("  - "+tile_object.name);
-                    Debug("    - "+tile_object.toString());
-                    this.tiles_info.put(tile_object.name,new Tile(
-                        null,
-                        tile_object.has("solid")?tile_object.getBoolean("solid"):false,
-                        false
-                    ));
+                    this.tiles_info.put(tile_object.name,tile_object.has("solid")?tile_object.getBoolean("solid"):false);
+                    Debug(String.format("    - %s: %s",tile_object.name,tiles_info.get(tile_object.name)));
                 }
             }
         }
         Debug("  - "+this.tiles_info.toString());
+    }
+    public void UpdateBody(String id){
+        Debug("Update body: "+id);
+        Body body = this.world.bodies.get(id);
+        switch(body.type){
+            case "crate":{
+                Body check_body = this.world.FindBody(body.pos,body);
+                boolean active = body.texture.charAt(body.texture.length()-1) == 'e';
+                Debug(" - Crate active: "+active);
+                if(check_body != null && check_body.type.equals("anchor")){
+                    if(!active) {
+                        body.texture = body.texture.substring(0, body.texture.length() - 1) + "e";
+                        UpdateBodyTexture(id);
+                    }
+                }else{
+                    if(active){
+                        body.texture = body.texture.substring(0, body.texture.length() - 1) + "d";
+                        UpdateBodyTexture(id);
+                    }
+                }
+            }
+        }
     }
     public void DeleteBody(String id){
         this.world.bodies.remove(id);
@@ -114,12 +179,67 @@ public class Server implements Runnable{
             }
         }
     }
+    public void DeleteAllBodies(){
+        Iterator<String> body_iterator = this.world.bodies.keySet().iterator();
+        while (body_iterator.hasNext()) {
+            String id = body_iterator.next();
+            for(String player_id: connections.keySet()){
+                try {
+                    Debug("  - Send data to "+player_id);
+                    Map data = new HashMap();
+                    data.put("delete_body",id);
+                    Debug("    - "+data.toString());
+                    this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+                }catch (Exception e){
+                    Debug("Error: "+e);
+                }
+            }
+            body_iterator.remove();
+        }
+    }
     public void DeletePlayer(String player_id){
-        this.world.players.remove(player_id);
+        this.players.remove(player_id);
         this.DeleteBody(player_id);
     }
+    public void ProvideAllBodies(){
+        for(String id: this.world.bodies.keySet()){
+            ProvideBody(id);
+        }
+    }
+    public void ProvideBody(String id){
+        Debug(String.format("          - Provide body: %s",id));
+        for(String player_id: connections.keySet()) {
+            Debug("            - " + player_id);
+            this.SendBody(id,player_id);
+        }
+    }
+    public void SendBody(String id, String player_id){
+        Body body = this.world.bodies.get(id);
+        try {
+            Debug("  - Send data to "+player_id);
+            Map data = new HashMap();
+            data.put("spawn_body",new HashMap<String,Object>(){{
+                put("id",body.id+"");
+                put("type",body.type+"");
+                put("pos",new Vector2(body.pos));
+                put("texture",body.texture+"");
+                put("show_name",body.show_name);
+                put("shadow",body.shadow);
+            }});
+            Debug("    - "+data.toString());
+            this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+        }catch (Exception e){
+            Debug("Error: "+e);
+        }
+    }
     public void SpawnPlayer(String player_id,String texture_name){
-        PlayerAvatar player = this.world.SpawnPlayer(player_id,texture_name);
+        PlayerAvatar player = new PlayerAvatar(this,this.world,player_id);
+        if(texture_name!=null){player.body.texture = texture_name;}
+        player.body.id = player_id;
+        this.players.put(player_id,player);
+        this.world.bodies.put(player_id,player.body);
+        player.body.pos = this.world.spawn_position;
+
         for(String player_id_send: connections.keySet()){
             try {
                 Debug("  - Send data to "+player_id);
@@ -128,7 +248,9 @@ public class Server implements Runnable{
                     put("id",player_id);
                     put("type","player");
                     put("pos",new Vector2(player.body.pos));
-                    put("texture",player.body.texture);
+                    put("texture",player.body.texture);;
+                    put("show_name",player.body.show_name);
+                    put("shadow",player.body.shadow);
                 }});
                 Debug("    - "+data.toString());
                 this.connections.get(player_id_send).SCQueue.offer(new DataPackage("server",data));
@@ -153,7 +275,9 @@ public class Server implements Runnable{
         this.LoadTiles("tiles");
 
         this.world = new World();
-        this.world.map = this.levels_list.get("level_05");
+//        this.world.map = this.levels_list.get("level_01");
+//        this.world.InitLevel();
+        this.StartLevel("level_01");
 
         Debug("Done!");
     }
@@ -161,6 +285,9 @@ public class Server implements Runnable{
         Debug(String.format("Connection: %s...",player_id));
         this.connections.put(player_id,connection);
         this.ProvideMessage(new Message("server",String.format("%s joined",player_id)));
+        for(String id: this.world.bodies.keySet()){
+            SendBody(id,player_id);
+        }
         this.SpawnPlayer(player_id,"entities/player_welp");
         Debug("Done!");
     }
@@ -192,6 +319,22 @@ public class Server implements Runnable{
                 data.put("update_body_pos",new HashMap<String,Object>(){{
                     put("id",id);
                     put("pos",new Vector2(world.bodies.get(id).pos));
+                }});
+                Debug("    - "+data.toString());
+                this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+            }catch (Exception e){
+                Debug("Error: "+e);
+            }
+        }
+    }
+    public void UpdateBodyTexture(String id){
+        for(String player_id: connections.keySet()){
+            try {
+                Debug("  - Send data to "+player_id);
+                Map data = new HashMap();
+                data.put("update_body_texture",new HashMap<String,Object>(){{
+                    put("id",id);
+                    put("texture",world.bodies.get(id).texture+"");
                 }});
                 Debug("    - "+data.toString());
                 this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
@@ -235,31 +378,35 @@ public class Server implements Runnable{
             }
         }
     }
-    public void CheckInputDatas(){
-        //Debug("    - Check input packages:");
+    public void CheckInputData(){
+//        Debug("    - Check input packages:");
         for(String player_id: connections.keySet()){
-            //Debug("      - "+player_id);
+//            Debug("      - "+player_id);
             if(this.connections.get(player_id).CSQueue.isEmpty()){
-                //Debug("        - There is no packages");
+//                Debug("        - There is no packages");
             }else {
                 while (!this.connections.get(player_id).CSQueue.isEmpty()) {
                     DataPackage input_package = this.connections.get(player_id).CSQueue.poll();
                     if (input_package.data != null) {
+                        Debug("      - "+player_id);
                         Debug("        - "+input_package.data);
                         for(String arg: input_package.data.keySet()) {
                             Object input_data = input_package.data.get(arg);
                             switch (arg) {
-                                case "order":
+                                case "order": {
                                     CompleteOrder((String) input_data, player_id);
                                     break;
-                                case "message":
+                                }
+                                case "message": {
                                     ProvideMessage((Message) input_data);
                                     break;
-                                case "move":
-                                    if(this.world.players.get(player_id).Move((String) input_data)) {
+                                }
+                                case "move": {
+                                    if (this.players.get(player_id).Move((String) input_data)) {
                                         this.UpdateBodyPos(player_id);
                                     }
                                     break;
+                                }
                             }
                         }
                     }else{
@@ -301,53 +448,82 @@ public class Server implements Runnable{
     private void NextMap(){
         List<String> levels = new ArrayList<>(this.levels_list.keySet());
         int actual = levels.indexOf(this.world.map.name);
-        this.world.map = this.levels_list.get(
-            actual+1 >= levels.size()?levels.get(0):levels.get(actual+1)
-        );
+//        this.world.map = this.levels_list.get(
+//            actual+1 >= levels.size()?levels.get(0):levels.get(actual+1)
+//        );
+        this.StartLevel(actual+1 >= levels.size()?levels.get(0):levels.get(actual+1));
     }
     private void PrevMap(){
         List<String> levels = new ArrayList<>(this.levels_list.keySet());
         int actual = levels.indexOf(this.world.map.name);
-        this.world.map = this.levels_list.get(
-            actual-1 < 0?levels.get(levels.size()-1):levels.get(actual-1)
-        );
+//        this.world.map = this.levels_list.get(
+//            actual-1 < 0?levels.get(levels.size()-1):levels.get(actual-1)
+//        );
+        this.StartLevel(actual-1 < 0?levels.get(levels.size()-1):levels.get(actual-1));
+    }
+    public void StartLevel(String level_name){
+        Debug("Start level: "+level_name);
+        DeleteAllBodies();
+        this.world.map = this.levels_list.get(level_name);
+        this.ProvideMap();
+        this.world.InitLevel();
+        this.ProvideAllBodies();
+        for(String player_id: this.players.keySet()){
+            String texture_name = this.players.get(player_id).body.texture;
+            DeletePlayer(player_id);
+            SpawnPlayer(player_id,texture_name);
+        }
     }
     public void CompleteOrder(String order_type, String player_id){
         Debug(String.format("          - Complete order: %s from %s",order_type,player_id));
         String[] order_args = order_type.split(" ");
         if(order_args.length == 0){return;}
-//        Map data = new HashMap();
         switch (order_args[0]){
-            case "get_map":
+            case "get_map": {
                 this.SendMap(player_id);
                 break;
-            case "set_map":
-                if(order_args.length > 1){
+            }
+            case "set_map": {
+                if (order_args.length > 1) {
                     String map_name = order_args[1];
-                    if(this.levels_list.containsKey(map_name)){
-                        this.world.map = this.levels_list.get(map_name);
-                        ProvideMap();
-                    }else{
-                        SendMessage(new Message("server",String.format("Error: There is no '%s' map",map_name)),player_id);
+                    if (this.levels_list.containsKey(map_name)) {
+                        this.StartLevel(map_name);
+//                        this.world.map = this.levels_list.get(map_name);
+//                        ProvideMap();
+                    } else {
+                        SendMessage(new Message("server", String.format("Error: There is no '%s' map", map_name)), player_id);
                     }
-                }else{
-                    SendMessage(new Message("server","Error: Empty map name argument"),player_id);
+                } else {
+                    SendMessage(new Message("server", "Error: Empty map name argument"), player_id);
                 }
                 break;
-            case "next_level":
+            }
+            case "set_skin": {
+                if (order_args.length > 1) {
+                    String texture_name = order_args[1];
+                    this.players.get(player_id).body.texture = "entities/"+texture_name;
+                    UpdateBodyTexture(player_id);
+                } else {
+                    SendMessage(new Message("server", "Error: Empty texture name argument"), player_id);
+                }
+                break;
+            }
+            case "next_level": {
                 NextMap();
                 ProvideMap();
                 break;
-            case "prev_level":
+            }
+            case "prev_level": {
                 PrevMap();
                 ProvideMap();
                 break;
+            }
         }
 
     }
     public void Tick(){
 //        Debug("  - Tick");
-        this.CheckInputDatas();
+        this.CheckInputData();
 
         for(String player_id: connections.keySet()){
             try {

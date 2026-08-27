@@ -1,6 +1,10 @@
-{"assets":{"#":"stone_plates_wall","-":"wooden_floor"},"size":[11,5]}
+{"assets":{"#":"stone_plate_wall","-":"wooden_floor"},"size":[11,5],"spawn_pos":[2,2]}
 ###########
 #---------#
 #---------#
 #---------#
 ###########
+{"action":"spawn","type":"crate","pos":[4,2],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"crate","pos":[6,2],"texture":"tiles/crate_01_d"}
+{"action":"spawn","type":"anchor","pos":[8,2],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[9,2],"texture":"tiles/anchor"}

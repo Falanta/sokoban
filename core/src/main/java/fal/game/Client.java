@@ -24,9 +24,12 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import fal.game.input.KeyboardControl;
 import fal.game.input.PlayerController;
@@ -46,6 +49,7 @@ public class Client {
         public boolean chat_interaction = false;
         public boolean chat_line_open = false;
         public String chat_line_buffer = "";
+        public String skin_texture = "player_welp";
         public ClientState(){
         }
     }
@@ -231,37 +235,54 @@ public class Client {
         String command_type = arg[0];
         Debug(String.format("  - Command: %s",command_type));
         switch (command_type){
-            case "/leave":
+            case "/leave": {
                 Leave();
                 this.world.map = new LevelMap("empty");
                 break;
-            case "/join":
-                Leave();
+            }
+            case "/join": {
+                if(this.active_connection != null) {
+                    Leave();
+                }
                 ConnectMe(this);
                 break;
-            case "/penis":
+            }
+            case "/penis": {
                 SendMessage("GROB GROB КЛАДБИЩЕ PIDOR");
                 break;
-            case "/set_map":
-                if(arg.length > 1){
+            }
+            case "/set_map": {
+                if (arg.length > 1) {
                     String map_name = arg[1];
-                    this.MakeOrder("set_map "+map_name,false);
+                    this.MakeOrder("set_map " + map_name, false);
                     this.AddOrder("get_map");
-                }else{
+                } else {
                     SendMessage("Type map name: /set_map <map name>");
                 }
                 break;
-            case "/next":
-                this.MakeOrder("next_level",false);
+            }
+            case "/next": {
+                this.MakeOrder("next_level", false);
                 this.AddOrder("get_map");
                 break;
-            case "/prev":
-                this.MakeOrder("prev_level",false);
+            }
+            case "/prev": {
+                this.MakeOrder("prev_level", false);
                 this.AddOrder("get_map");
                 break;
-            default:
-                SendMessage("Unknown command: "+command_type);
+            }
+            case "/skin": {
+                if (arg.length > 1) {
+                    String texture_name = arg[1];
+                    this.MakeOrder("set_skin " + texture_name, false);
+                } else {
+                    SendMessage("Type map name: /skin <texture name>");
+                }
                 break;
+            }
+            default: {
+                SendMessage("Unknown command: " + command_type);
+            }
         }
     }
     public void SendMessage(String text){
@@ -290,15 +311,22 @@ public class Client {
         this.active_connection = null;
     }
     public void PullData(){
-        //Debug("    - Pull Data");
-        if(!this.active_connection.SCQueue.isEmpty()){
-            while(!this.active_connection.SCQueue.isEmpty()){
+//        //Debug("    - Pull Data");
+//        if(!this.active_connection.SCQueue.isEmpty()){
+//            while(!this.active_connection.SCQueue.isEmpty()){
+//                DataPackage input_package = this.active_connection.SCQueue.poll();
+//                this.last_data.putAll(input_package.data);
+//            }
+//            //Debug("      - "+last_data.toString());
+//        }else{
+//            //Debug("      - There is no package");
+//        }
+        if(!this.active_connection.SCQueue.isEmpty()) {
+            while (!this.active_connection.SCQueue.isEmpty()) {
                 DataPackage input_package = this.active_connection.SCQueue.poll();
                 this.last_data.putAll(input_package.data);
+                this.CheckData();
             }
-            //Debug("      - "+last_data.toString());
-        }else{
-            //Debug("      - There is no package");
         }
     }
     public Object ReadData(String id){
@@ -325,7 +353,7 @@ public class Client {
         this.waiting_orders.add(order_type);
     }
     public void CheckOrders(){
-        //Debug("     - Check orders");
+//        Debug("     - Check orders");
         if(this.last_data != null && !this.waiting_orders.isEmpty()){
             Iterator<String> order_iterator = this.waiting_orders.iterator();
             while(order_iterator.hasNext()){
@@ -369,6 +397,9 @@ public class Client {
             //Debug("There is no messages");
         }
     }
+    public float PosterizeNum(float num){
+        return Math.round(num/2)*2;
+    }
     public void CheckData(){
         if(last_data == null){return;}
         Iterator arg_iterator = last_data.keySet().iterator();
@@ -383,10 +414,21 @@ public class Client {
                     String type = body_info.get("type").toString();
                     Vector2 pos = (Vector2) body_info.get("pos");
                     String texture = body_info.get("texture").toString();
+                    boolean show_name = (boolean)body_info.get("show_name");
+                    boolean shadow = (boolean)body_info.get("shadow");
                     Debug("  - " + id);
-                    this.world.AddBody(type, id, texture, pos);
-                    this.world.bodies.get(id).texture_region = manager.GetRegion(texture);
+                    Body body = this.world.AddBody(type, id, texture, pos);
+                    try {
+                        body.texture_region = manager.GetRegion(texture);
+                    }catch (Exception e) {
+                        Debug("Error: "+e);
+                        body.texture_region = manager.GetRegion("tiles/template");
+                    }
                     arg_iterator.remove();
+                    body.show_name = show_name;
+                    body.show_name = this.world.bodies.get(id).type.equals("player");
+                    body.shadow = shadow;
+                    body.draw_pos = new Vector2(body.pos);
                     break;
                 }
                 case "delete_body": {
@@ -397,8 +439,24 @@ public class Client {
                 }
                 case "update_body_pos": {
                     HashMap body_info = (HashMap<String, Object>) input_data;
-                    this.world.bodies.get(body_info.get("id").toString()).pos = (Vector2) body_info.get("pos");
-                    Debug(String.format("- Updated body position: %s [%s]",this.world.bodies.get(body_info.get("id").toString()).toString(),this.world.bodies.get(body_info.get("id").toString()).pos.toString()));
+                    String id = body_info.get("id").toString();
+                    this.world.bodies.get(id).pos = (Vector2) body_info.get("pos");
+                    Debug(String.format("- Updated body position: %s [%s]",id,this.world.bodies.get(id).pos.toString()));
+                    arg_iterator.remove();
+                    break;
+                }
+                case "update_body_texture": {
+                    HashMap body_info = (HashMap<String, Object>) input_data;
+                    String id = body_info.get("id").toString();
+                    String texture = body_info.get("texture").toString();
+                    try {
+                        this.world.bodies.get(id).texture = texture;
+                        this.world.bodies.get(id).texture_region = manager.GetRegion(texture);
+                    }catch (Exception e){
+                        this.world.bodies.get(id).texture = "tiles/template";
+                        this.world.bodies.get(id).texture_region = manager.GetRegion(this.world.bodies.get(id).texture);
+                    }
+                    Debug(String.format("- Updated body texture: %s [%s]",id,this.world.bodies.get(id).texture));
                     arg_iterator.remove();
                     break;
                 }
@@ -422,12 +480,16 @@ public class Client {
         this.batch.end();
     }
     public void RenderBodies(int offset_x, int offset_y){
-        for(String id: this.world.bodies.keySet()){
-            Debug("Draw: "+id);
+        List<String> sorted_bodies = this.world.bodies.keySet().stream()
+            .sorted(Comparator.comparing((String id) -> !this.world.bodies.get(id).solid)
+                .thenComparing(id -> "player".equals(this.world.bodies.get(id).type)))
+            .collect(Collectors.toList());
+        for(String id: sorted_bodies){
             Body body = this.world.bodies.get(id);
-            this.batch.draw(body.texture_region,body.pos.x*tiles_size.x+offset_x,-body.pos.y*tiles_size.y+offset_y);
+            body.UpdateDrawPos(0.9f);
+            this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
             if(body.show_name){
-                this.main_interface.DrawTextCentered(body.id,new Vector2(body.pos.x*tiles_size.x+tiles_size.x/2+offset_x,(-body.pos.y+1)*tiles_size.y+tiles_size.y/2+offset_y),1f,10,"fonts/consolas.ttf",false);
+                this.main_interface.DrawTextCentered(body.id,new Vector2(PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y),1f,10,"fonts/consolas.ttf",false);
             }
         }
     }
@@ -457,6 +519,14 @@ public class Client {
                 }else if(tiles_pallete.get(cell.type).solid) {
                     batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
                 }
+            }
+        }
+        for(String id: this.world.bodies.keySet()) {
+            Body body = this.world.bodies.get(id);
+            if (body.shadow) {
+                batch.setColor(0, 0, 0, 0.3f);
+                batch.draw(shadowTexture, PosterizeNum(body.draw_pos.x * tiles_size.x) + offset_x + 3, PosterizeNum(-body.draw_pos.y * tiles_size.y) + offset_y - 3, tiles_size.x, tiles_size.y);
+                batch.setColor(1, 1, 1, 1);
             }
         }
         batch.setColor(1, 1, 1, 1);
@@ -541,7 +611,7 @@ public class Client {
         if(this.active_connection != null) {
             this.PullData();
             this.CheckOrders();
-            this.CheckData();
+//            this.CheckData();
             this.CheckMessages();
         }
 
@@ -552,7 +622,7 @@ public class Client {
         if(render) {
             this.cam.Update();
 
-            ScreenUtils.clear(0.15f, 0.15f, 0.15f, 1f);
+            ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
             batch.setProjectionMatrix(this.cam.camera.combined);
             batch.begin();
             if (this.world.map.loaded) {

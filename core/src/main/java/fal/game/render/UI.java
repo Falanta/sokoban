@@ -17,6 +17,7 @@ import java.util.Map;
 
 import fal.game.Client;
 import fal.game.network.Message;
+import fal.game.world.Body;
 
 public class UI {
 
@@ -92,7 +93,25 @@ public class UI {
     }
     public void DrawDebugInformation(){
         this.debug_info_builder.setLength(0);
-        this.debug_info_builder.append("FPS:").append(this.owner.actual_fps).append("\nTPS:").append(this.owner.last_tps).append("\nClient ID: ").append(this.owner.id).append("\nConnected server: ").append(this.owner.active_connection==null?"NONE":this.owner.active_connection.server_name);
+        this.debug_info_builder.append("FPS:")
+            .append(this.owner.actual_fps)
+            .append("\nTPS:")
+            .append(this.owner.last_tps)
+            .append("\nClient ID: ")
+            .append(this.owner.id);
+        if(this.owner.active_connection!=null){
+            this.debug_info_builder
+                .append("\nConnected server: ")
+                .append(this.owner.active_connection.server_name)
+                .append("\nLevel: ")
+                .append(this.owner.world.map.name);
+            this.debug_info_builder.append("\nBodies: [");
+            for(String id: this.owner.world.bodies.keySet()){
+                this.debug_info_builder.append("\n - ").append(id);
+            }
+            this.debug_info_builder.append("\n]");
+        }
+
         this.DrawTextBuilder(this.debug_info_builder,new Vector2(-this.ui_size.x/2+1,this.ui_size.y/2-1),1.0f,9,"fonts/consolas.ttf",this.text_shadow);
     }
     public void DrawChat(){

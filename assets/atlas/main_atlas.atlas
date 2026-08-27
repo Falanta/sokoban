@@ -13,13 +13,48 @@ pixel_black
   index: -1
 
 main_atlas2.png
-size: 16, 16
+size: 128, 16
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-entities/player_welp
+entities/player_flush
   rotate: false
   xy: 1, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_panic
+  rotate: false
+  xy: 15, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_rs
+  rotate: false
+  xy: 29, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_smirk
+  rotate: false
+  xy: 43, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_welp
+  rotate: false
+  xy: 57, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_why_cry
+  rotate: false
+  xy: 71, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
@@ -46,90 +81,174 @@ styles/template_style
   index: -1
 
 main_atlas4.png
-size: 256, 16
+size: 512, 16
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-tiles/crate
+tiles/anchor
   rotate: false
   xy: 1, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
-  index: 1
-tiles/crate_01_d
+  index: -1
+tiles/bricks_floor
   rotate: false
   xy: 15, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/crate_01_e
+tiles/bricks_wall
   rotate: false
   xy: 29, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_floor
+tiles/crate
   rotate: false
   xy: 43, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
-  index: -1
-tiles/plastic_tiles_floor
+  index: 1
+tiles/crate
+  rotate: false
+  xy: 57, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: 2
+tiles/crate_02_d
   rotate: false
   xy: 57, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_tiles_wall
+tiles/crate_01_d
   rotate: false
   xy: 71, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_wall
+tiles/crate_01_e
   rotate: false
   xy: 85, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_floor
+tiles/crate_02_e
   rotate: false
   xy: 99, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_wall
+tiles/plastic_floor
   rotate: false
   xy: 113, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/template
+tiles/plastic_tiles_floor
   rotate: false
   xy: 127, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_floor
+tiles/plastic_tiles_wall
   rotate: false
   xy: 141, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_wall
+tiles/plastic_wall
   rotate: false
   xy: 155, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_floor
+  rotate: false
+  xy: 169, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_plate_alt_floor
+  rotate: false
+  xy: 183, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_plate_alt_wall
+  rotate: false
+  xy: 197, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_plate_floor
+  rotate: false
+  xy: 211, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_plate_wall
+  rotate: false
+  xy: 225, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_tiles_floor
+  rotate: false
+  xy: 239, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_tiles_wall
+  rotate: false
+  xy: 253, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/stone_wall
+  rotate: false
+  xy: 267, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/template
+  rotate: false
+  xy: 281, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_floor
+  rotate: false
+  xy: 295, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_wall
+  rotate: false
+  xy: 309, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0

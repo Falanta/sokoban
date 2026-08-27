@@ -7,6 +7,14 @@
     "texture": "tiles/stone_floor",
     "solid": false
   },
+  "bricks_wall": {
+    "texture": "tiles/bricks_wall",
+    "solid": true
+  },
+  "bricks_floor": {
+    "texture": "tiles/bricks_floor",
+    "solid": false
+  },
   "wooden_wall": {
     "texture": "tiles/wooden_wall",
     "solid": true
@@ -29,6 +37,30 @@
   },
   "plastic_tiles_floor": {
     "texture": "tiles/plastic_tiles_floor",
+    "solid": false
+  },
+  "stone_plate_wall": {
+    "texture": "tiles/stone_plate_wall",
+    "solid": true
+  },
+  "stone_plate_floor": {
+    "texture": "tiles/stone_plate_floor",
+    "solid": false
+  },
+  "stone_plate_alt_wall": {
+    "texture": "tiles/stone_plate_alt_wall",
+    "solid": true
+  },
+  "stone_plate_alt_floor": {
+    "texture": "tiles/stone_plate_alt_floor",
+    "solid": false
+  },
+  "stone_tiles_wall": {
+    "texture": "tiles/stone_tiles_wall",
+    "solid": true
+  },
+  "stone_tiles_floor": {
+    "texture": "tiles/stone_tiles_floor",
     "solid": false
   }
 }

@@ -20,6 +20,7 @@ public class LevelMap {
         }
     }
     public String name;
+    public String path = null;
     public ArrayList<ArrayList<Cell>> matrix;
     public Vector2 size;
     public boolean loaded = false;
