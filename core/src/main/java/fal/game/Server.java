@@ -289,6 +289,12 @@ public class Server implements Runnable{
             SendBody(id,player_id);
         }
         this.SpawnPlayer(player_id,"entities/player_welp");
+
+        Map data = new HashMap();
+        data.put("joined",true);
+        Debug("    - "+data.toString());
+        this.connections.get(player_id).SCQueue.offer(new DataPackage("server",data));
+
         Debug("Done!");
     }
     public void Kick(String player_id){

@@ -7,6 +7,12 @@ import com.badlogic.gdx.InputAdapter;
 public class KeyboardControl extends InputAdapter implements PlayerController {
     public final StringBuilder typedBuffer = new StringBuilder();
     private boolean isChatting = false;
+    private boolean mouse_memory = false;
+    private boolean mouse_interact = false;
+    public void UpdateMouse(){
+        mouse_interact = mouse_memory && !Gdx.input.isButtonPressed(Input.Buttons.LEFT);
+        mouse_memory = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
+    }
 
     public void setChatting(boolean chatting) {
         this.isChatting = chatting;
@@ -43,4 +49,5 @@ public class KeyboardControl extends InputAdapter implements PlayerController {
     @Override public boolean CameraZoomOut() { return Gdx.input.isKeyPressed(Input.Keys.E); }
     @Override public boolean ChatInteraction() { return Gdx.input.isKeyJustPressed(Input.Keys.ENTER); }
     @Override public boolean ChatHideInteraction() { return Gdx.input.isKeyJustPressed(Input.Keys.H); }
+    @Override public boolean MouseInteraction() { return this.mouse_interact; }
 }

@@ -7,6 +7,8 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -29,6 +31,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import fal.game.input.KeyboardControl;
@@ -38,6 +41,7 @@ import fal.game.network.DataPackage;
 import fal.game.network.Message;
 import fal.game.render.Tile;
 import fal.game.render.UI;
+import fal.game.render.UIButton;
 import fal.game.world.Body;
 import fal.game.world.LevelMap;
 import fal.game.world.World;
@@ -45,17 +49,24 @@ import fal.game.world.World;
 public class Client {
     public class ClientState {
         public boolean chat_hide_interaction = false;
-        public boolean chat_hide = false;
+        public boolean chat_hide = true;
         public boolean chat_interaction = false;
         public boolean chat_line_open = false;
         public String chat_line_buffer = "";
-        public String skin_texture = "player_welp";
+        public String skin_texture = "player_flush";
+        public boolean player_step_memory = false;
+        public ArrayList<String> available_skins = new ArrayList<String>();
         public int move_counter = -1;
         public long actual_time = 0;
         public long start_time = 0;
+        public long menu_animation_start_time = 0;
+        public boolean logo_anim_loaded = false;
+        public String menu = "main";
         public boolean level_running = false;
+        public Vector2 cursor_pos = new Vector2();
         public ClientState(){
         }
+
     }
     public static class ResourceManager {
         public final AssetManager assetManager;
@@ -69,21 +80,52 @@ public class Client {
         }
         public void LoadFont(String path, int size) {
             fal.game.Main.Debug(String.format("Loading font %s",path));
-            fal.game.Main.Debug(String.format("- File exists: %s",Gdx.files.internal("fonts/regular.ttf").exists()));
+            fal.game.Main.Debug(String.format("- File exists: %s",Gdx.files.internal(path).exists()));
             FreetypeFontLoader.FreeTypeFontLoaderParameter fontParams = new FreetypeFontLoader.FreeTypeFontLoaderParameter();
             fontParams.fontFileName = path;
             fontParams.fontParameters.size = size;
             fontParams.fontParameters.genMipMaps = false;
             fontParams.fontParameters.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
             fontParams.fontParameters.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
-            fontParams.fontParameters.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ☺☻♥♦♣♠";;
+            fontParams.fontParameters.characters = "1234567890_.,:;-+()[]{}<>/\\!?%~*ABCDEFGHIJKLMNO '\"`=&@$#^PQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяЂђЈјЉљЊњЋћЏџҐґЄєІіЇїЎў";;
             assetManager.load(path, BitmapFont.class, fontParams);
+        }
+        public void ParseSounds(String folderPath) {
+            Main.Debug(String.format("- Loading %s...", folderPath));
+            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folderPath);
+            if (!dir.exists()) {
+                Main.Debug(String.format("ERROR: There is no folder %s", folderPath));
+                return;
+            }
+            for (com.badlogic.gdx.files.FileHandle file : dir.list()) {
+                if (!file.isDirectory()) {
+                    String path = file.path();
+                    String extension = file.extension().toLowerCase();
+                    if (extension.equals("wav") || extension.equals("ogg")) {
+                        if(file.name().contains("_msc")) {
+                            LoadMusic(path);
+                        }else if (file.name().contains("_snd")){
+                            LoadSound(path);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void LoadSound(String path) {
+            Main.Debug(String.format("  - Loading sound %s", path));
+            assetManager.load(path, Sound.class);
+        }
+        public void LoadMusic(String path) {
+            Main.Debug(String.format("  - Loading music %s", path));
+            assetManager.load(path, Music.class);
         }
         public void LoadAll() {
             Main.Debug("Loading assets...");
             assetManager.load("atlas/main_atlas.atlas", TextureAtlas.class);
-            LoadFont("fonts/regular.ttf",16);
+            LoadFont("fonts/small_sokoban.ttf",8);
             LoadFont("fonts/consolas.ttf",12);
+            ParseSounds("sounds");
             assetManager.finishLoading();
             atlas = assetManager.get("atlas/main_atlas.atlas", TextureAtlas.class);
             Main.Debug(String.format("Done! Assets (%s):",assetManager.getLoadedAssets()));
@@ -103,6 +145,19 @@ public class Client {
                 throw new IllegalArgumentException("Unknown texture: "+name);
             }
             return region;
+        }
+        public void PlaySound(String path,float volume,float pitch,float pan){
+            try {
+                this.GetSound(path).play(volume,pitch,pan);
+            }catch (Exception e){
+                Main.Debug("ERROR: "+e);
+            }
+        }
+        public Sound GetSound(String path) {
+            return assetManager.get(path, Sound.class);
+        }
+        public Music GetMusic(String path) {
+            return assetManager.get(path, Music.class);
         }
         public void dispose() {
             assetManager.dispose();
@@ -142,7 +197,6 @@ public class Client {
     public ArrayList<Message> chat = new ArrayList<Message>();
     public World world;
     public Camera cam;
-    public Vector2 actual_cursor_position;
     public UI main_interface;
     public Map<String,Tile> tiles_pallete;
     public static final Vector2 tiles_size = new Vector2(12,12);
@@ -177,14 +231,23 @@ public class Client {
             "main_atlas"
         );
 
-        this.manager = new ResourceManager();
-        this.manager.LoadAll();
-
+        manager = new ResourceManager();
+        manager.LoadAll();
         this.main_interface = new UI(this);
-
         this.LoadTiles("tiles");
 
+        for (TextureAtlas.AtlasRegion region : manager.atlas.getRegions()) {
+            if(region.name.contains("entities/player")){
+                Debug(region.name);
+                this.state.available_skins.add(region.name.split("/")[1]);
+            }
+        }
+
+        manager.PlaySound("sounds/empty_snd.ogg",0.0f,1.0f,0.0f);
+
         this.world = new World();
+
+        this.OpenMenu("main");
 
         Debug("Done!");
     }
@@ -407,6 +470,11 @@ public class Client {
         this.state.actual_time = 0;
         this.state.level_running = true;
     }
+    public void OpenMenu(String menu_id){
+        this.state.logo_anim_loaded = false;
+        this.state.menu = menu_id;
+        this.state.menu_animation_start_time = System.currentTimeMillis();
+    }
     public boolean CheckEndGame(){
         for(Body body: this.world.bodies.values()){
             if(body.type.equals("crate") && (body.texture.charAt(body.texture.length()-1)=='d')){
@@ -420,6 +488,15 @@ public class Client {
     }
     public float PosterizeNum(float num){
         return Math.round(num/2)*2;
+    }
+    public void UpdateCursor() {
+        float virtualWidth = this.main_interface.ui_viewport.getWorldWidth();
+        float virtualHeight = this.main_interface.ui_viewport.getWorldHeight();
+
+        this.state.cursor_pos.set(
+            (Gdx.input.getX() * (virtualWidth / Gdx.graphics.getWidth())) - (virtualWidth / 2f),
+            (virtualHeight / 2f) - (Gdx.input.getY() * (virtualHeight / Gdx.graphics.getHeight()))
+        );
     }
     public void CheckData(){
         if(last_data == null){return;}
@@ -478,13 +555,31 @@ public class Client {
                         this.world.bodies.get(id).texture_region = manager.GetRegion(this.world.bodies.get(id).texture);
                     }
                     Debug(String.format("- Updated body texture: %s [%s]",id,this.world.bodies.get(id).texture));
+
+                    if(id.contains("crate")){
+                        if(texture.contains("_e")){
+                            manager.PlaySound("sounds/crate_place_snd.ogg",0.5f,1.0f,0.0f);
+                        }else if (texture.contains("_d")){
+                            manager.PlaySound("sounds/crate_remove_snd.ogg",0.5f,1.0f,0.0f);
+                        }
+                    }
+
                     arg_iterator.remove();
                     break;
                 }
                 case "move_count": {
                     Debug("- Move count");
                     if(input_data == null){
+                        if(this.state.player_step_memory) {
+                            manager.PlaySound("sounds/step_snd.ogg",0.25f,1.0f,0.0f);
+                        }else{
+                            manager.PlaySound("sounds/step_snd.ogg",0.25f,1.2f,0.0f);
+                        }
+                        this.state.player_step_memory = !this.state.player_step_memory;
                         if(this.state.level_running) {
+                            if(this.state.move_counter == 0){
+                                this.state.start_time = System.currentTimeMillis();
+                            }
                             this.state.move_counter += 1;
                         }
                     }else{
@@ -499,6 +594,12 @@ public class Client {
                     arg_iterator.remove();
                     break;
                 }
+                case "joined": {
+                    Debug("- Joined to server");
+                    this.MakeOrder("set_skin " + this.state.skin_texture, false);
+                    arg_iterator.remove();
+                    break;
+                }
                 case "tps": {
                     this.last_tps = ((input_data == null) ? (short) -1 : (short) input_data);
                     break;
@@ -509,15 +610,33 @@ public class Client {
     public void RenderUI(){
         this.batch.setProjectionMatrix(this.main_interface.ui_viewport.getCamera().combined);
         this.batch.begin();
-        this.main_interface.DrawDebugInformation();
-        if(this.active_connection != null) {
-            this.main_interface.DrawLevelInformation();
-        }
-        if(!this.state.chat_hide) {
-            this.main_interface.DrawChat();
-        }
-        if(this.state.chat_line_open){
-            this.main_interface.DrawChatLine(""+this.state.chat_line_buffer);
+//        this.main_interface.DrawDebugInformation();
+        switch (this.state.menu) {
+            case "game": {
+                if (this.active_connection != null) {
+                    this.main_interface.DrawLevelInformation();
+                    if (!this.state.chat_hide) {
+                        this.main_interface.DrawChat();
+                    }
+                    if (this.state.chat_line_open) {
+                        this.main_interface.DrawChatLine("" + this.state.chat_line_buffer);
+                    }
+                    this.main_interface.DrawGameOverlay();
+                } else {
+                    this.OpenMenu("main");
+                }
+                break;
+            }
+            case "main": {
+                this.main_interface.DrawMainMenu();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
+            case "customize": {
+                this.main_interface.DrawCustomizeMenu();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
         }
         this.batch.end();
     }
@@ -525,7 +644,7 @@ public class Client {
         body.UpdateDrawPos(0.9f);
         this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
         if(body.show_name){
-            this.main_interface.DrawTextCentered(body.id,new Vector2(PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y),1f,10,"fonts/consolas.ttf",false);
+            this.main_interface.DrawTextCentered(body.id,(int) PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,(int) PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y,1f,10,null,true);
         }
     }
     public void RenderBodies(int offset_x, int offset_y){
@@ -599,80 +718,156 @@ public class Client {
     }
     public void Control(){
         if(this.controller == null) {return;}
-        boolean chatLineOpen = this.state.chat_line_open;
-        if(!chatLineOpen){
-            if(this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()){
-                this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed,1.0f);
-            } else if(!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()){
-                this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed,0.25f);
-            }
-            if(this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()){
-                this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed*this.cam.zoom,200.0f);
-            } else if(!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()){
-                this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed*this.cam.zoom,-100.0f);
-            }
-            if(this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()){
-                this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed*this.cam.zoom,200.0f);
-            } else if(!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()){
-                this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed*this.cam.zoom,-100.0f);
-            }
-            if (this.controller.ChatHideInteraction()) {
-                if (!(boolean) this.state.chat_hide_interaction) {
-                    if (this.state.chat_hide) {
-                        this.state.chat_hide = false; // Hide chat
-                    } else {
-                        this.state.chat_hide = true; // Show chat
+        ((KeyboardControl)this.controller).UpdateMouse();
+        switch (this.state.menu) {
+            case "game": {
+                boolean chatLineOpen = this.state.chat_line_open;
+                if (!chatLineOpen) {
+                    if (this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()) {
+                        this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed, 1.0f);
+                    } else if (!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()) {
+                        this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed, 0.25f);
+                    }
+                    if (this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()) {
+                        this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed * this.cam.zoom, 200.0f);
+                    } else if (!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()) {
+                        this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed * this.cam.zoom, -100.0f);
+                    }
+                    if (this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()) {
+                        this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed * this.cam.zoom, 200.0f);
+                    } else if (!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()) {
+                        this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed * this.cam.zoom, -100.0f);
+                    }
+                    if (this.controller.ChatHideInteraction()) {
+                        if (!(boolean) this.state.chat_hide_interaction) {
+                            if (this.state.chat_hide) {
+                                this.state.chat_hide = false; // Hide chat
+                            } else {
+                                this.state.chat_hide = true; // Show chat
+                            }
+                        }
+                    }
+                    if (this.controller.MoveUp() && !this.controller.MoveDown()) {
+                        this.active_connection.CSQueue.offer(new DataPackage(this.id, new HashMap<String, Object>() {{
+                            put("move", "up");
+                        }}));
+                    } else if (!this.controller.MoveUp() && this.controller.MoveDown()) {
+                        this.active_connection.CSQueue.offer(new DataPackage(this.id, new HashMap<String, Object>() {{
+                            put("move", "down");
+                        }}));
+                    }
+                    if (this.controller.MoveLeft() && !this.controller.MoveRight()) {
+                        this.active_connection.CSQueue.offer(new DataPackage(this.id, new HashMap<String, Object>() {{
+                            put("move", "left");
+                        }}));
+                    } else if (!this.controller.MoveLeft() && this.controller.MoveRight()) {
+                        this.active_connection.CSQueue.offer(new DataPackage(this.id, new HashMap<String, Object>() {{
+                            put("move", "right");
+                        }}));
+                    }
+                } else {
+                    if (this.controller instanceof KeyboardControl) {
+                        this.state.chat_line_buffer = ((KeyboardControl) this.controller).typedBuffer.toString();
                     }
                 }
+                if (this.controller.ChatInteraction()) {
+                    if (this.state.chat_line_open) {
+                        this.state.chat_line_open = false; // Close chat line, send message
+                        if (!this.state.chat_line_buffer.isEmpty()) {
+                            this.SendMessage(this.state.chat_line_buffer);
+                        }
+                        this.state.chat_line_buffer = "";
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(false);
+                        }
+                    } else {
+                        this.state.chat_line_open = true; // Open chat line
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(true);
+                        }
+                    }
+                }
+                UIButton restart_button = this.main_interface.buttons.get("game.restart");
+                UIButton next_button = this.main_interface.buttons.get("game.next");
+                UIButton back_button = this.main_interface.buttons.get("game.back");
+                if(this.controller.MouseInteraction()) {
+                    if (restart_button.Read()) {
+//                        this.MakeOrder("set_map " + world.map.name, false);
+//                        this.AddOrder("get_map");
+                        SendMessage("/set_map " + world.map.name);
+                    }
+                    if (next_button.Read()) {
+//                        this.MakeOrder("next_level", false);
+//                        this.AddOrder("get_map");
+                        SendMessage("/next");
+                    }
+                    if (back_button.Read()) {
+//                        Leave();
+//                        this.world.map = new LevelMap("empty");
+                        SendMessage("/leave");
+                        this.OpenMenu("main");
+                    }
+                }
+                break;
             }
-            if(this.controller.MoveUp()&&!this.controller.MoveDown()){
-                this.active_connection.CSQueue.offer(new DataPackage(this.id,new HashMap<String,Object>(){{put("move","up");}}));
-            }else if(!this.controller.MoveUp()&&this.controller.MoveDown()){
-                this.active_connection.CSQueue.offer(new DataPackage(this.id,new HashMap<String,Object>(){{put("move","down");}}));
+            case "main":{
+                UIButton play_button = this.main_interface.buttons.get("main.play");
+                UIButton customize_button = this.main_interface.buttons.get("main.customize");
+                if(this.controller.MouseInteraction()) {
+                    if (play_button.Read()) {
+                        ConnectMe(this);
+                        this.OpenMenu("game");
+                    }
+                    if (customize_button.Read()) {
+                        this.OpenMenu("customize");
+                    }
+                }
+                break;
             }
-            if(this.controller.MoveLeft()&&!this.controller.MoveRight()){
-                this.active_connection.CSQueue.offer(new DataPackage(this.id,new HashMap<String,Object>(){{put("move","left");}}));
-            }else if(!this.controller.MoveLeft()&&this.controller.MoveRight()){
-                this.active_connection.CSQueue.offer(new DataPackage(this.id,new HashMap<String,Object>(){{put("move","right");}}));
-            }
-        }else{
-            if (this.controller instanceof KeyboardControl) {
-                this.state.chat_line_buffer = ((KeyboardControl) this.controller).typedBuffer.toString();
+            case "customize":{
+                UIButton back_button = this.main_interface.buttons.get("customize.back");
+                UIButton prev_button = this.main_interface.buttons.get("customize.prev");
+                UIButton next_button = this.main_interface.buttons.get("customize.next");
+                if(this.controller.MouseInteraction()) {
+                    if (back_button.Read()) {
+                        this.OpenMenu("main");
+                    }
+                    if (next_button.Read()) {
+                        int actual = this.state.available_skins.indexOf(this.state.skin_texture);
+                        this.state.skin_texture = this.state.available_skins.get(actual+1 >= this.state.available_skins.size()?0:actual+1);
+                        manager.PlaySound("sounds/pop_snd.ogg",0.25f,1.0f,0.0f);
+                    }
+                    if (prev_button.Read()) {
+                        int actual = this.state.available_skins.indexOf(this.state.skin_texture);
+                        this.state.skin_texture = this.state.available_skins.get(actual-1 < 0?this.state.available_skins.size()-1:actual-1);
+                        manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.9f,0.0f);
+                    }
+                }
+                break;
             }
         }
-        if (this.controller.ChatInteraction()) {
-            if(this.state.chat_line_open){
-                this.state.chat_line_open = false; // Close chat line, send message
-                if(!this.state.chat_line_buffer.isEmpty()){
-                    this.SendMessage(this.state.chat_line_buffer);
-                }
-                this.state.chat_line_buffer = "";
-                if (this.controller instanceof KeyboardControl) {
-                    ((KeyboardControl) this.controller).setChatting(false);
-                }
-            }else{
-                this.state.chat_line_open = true; // Open chat line
-                if (this.controller instanceof KeyboardControl) {
-                    ((KeyboardControl) this.controller).setChatting(true);
-                }
-            }
-        }
+    }
+    public void LevelCleared(){
+        this.state.level_running = false;
+        manager.PlaySound("sounds/level_clear_snd.ogg",0.5f,1.0f,0.0f);
     }
     public void Tick(boolean render){
         //Debug("  - Tick");
         milli_time = System.currentTimeMillis();
+        this.UpdateCursor();
         //Debug(milli_time+"");
         if(this.active_connection != null) {
             this.PullData();
             this.CheckOrders();
-//            this.CheckData();
             this.CheckMessages();
         }
         if(this.state.level_running){
             if(this.CheckEndGame()){
-                this.state.level_running = false;
+                this.LevelCleared();
             }else {
-                this.UpdateTime();
+                if(this.state.move_counter != 0) {
+                    this.UpdateTime();
+                }
             }
         }
 
@@ -683,7 +878,11 @@ public class Client {
         if(render) {
             this.cam.Update();
 
-            ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
+            if(this.state.level_running || !this.state.menu.equals("game")) {
+                ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
+            }else{
+                ScreenUtils.clear(0.15f, 0.15f, 0.15f, 1f);
+            }
             batch.setProjectionMatrix(this.cam.camera.combined);
             batch.begin();
             if (this.world.map.loaded) {

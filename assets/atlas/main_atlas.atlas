@@ -13,68 +13,159 @@ pixel_black
   index: -1
 
 main_atlas2.png
-size: 128, 16
+size: 256, 16
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-entities/player_flush
+entities/player_coffin
   rotate: false
   xy: 1, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_panic
+entities/player_flush
   rotate: false
   xy: 15, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_rs
+entities/player_headstone
   rotate: false
   xy: 29, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_smirk
+entities/player_panic
   rotate: false
   xy: 43, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_welp
+entities/player_pidor
   rotate: false
   xy: 57, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_why_cry
+entities/player_rs
   rotate: false
   xy: 71, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
+entities/player_skull
+  rotate: false
+  xy: 85, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_smirk
+  rotate: false
+  xy: 99, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_welp
+  rotate: false
+  xy: 113, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_why_cry
+  rotate: false
+  xy: 127, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
 
 main_atlas3.png
-size: 16, 16
+size: 64, 16
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-styles/container_button
+styles/button_01_h
   rotate: false
   xy: 1, 8
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/template_style
+styles/button_01_p
   rotate: false
   xy: 1, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_01_s
+  rotate: false
+  xy: 8, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_02_h
+  rotate: false
+  xy: 8, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_02_p
+  rotate: false
+  xy: 15, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_02_s
+  rotate: false
+  xy: 15, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_03_h
+  rotate: false
+  xy: 22, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_03_p
+  rotate: false
+  xy: 22, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/button_03_s
+  rotate: false
+  xy: 29, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/container_button
+  rotate: false
+  xy: 29, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/template_style
+  rotate: false
+  xy: 36, 8
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
@@ -253,3 +344,99 @@ tiles/wooden_wall
   orig: 12, 12
   offset: 0, 0
   index: -1
+
+main_atlas5.png
+size: 64, 16
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+ui/arrow_left
+  rotate: false
+  xy: 1, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/arrow_reload
+  rotate: false
+  xy: 11, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/arrow_right
+  rotate: false
+  xy: 21, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/home
+  rotate: false
+  xy: 31, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+
+main_atlas6.png
+size: 256, 128
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+ui/logo/letter_a
+  rotate: false
+  xy: 1, 11
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/letter_b
+  rotate: false
+  xy: 133, 77
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/letter_k
+  rotate: false
+  xy: 1, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/letter_n
+  rotate: false
+  xy: 11, 11
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/letter_o
+  rotate: false
+  xy: 133, 67
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/letter_s
+  rotate: false
+  xy: 143, 77
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
+ui/logo/logo
+  rotate: false
+  xy: 1, 21
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+ui/logo/logo
+  rotate: false
+  xy: 67, 21
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 2
