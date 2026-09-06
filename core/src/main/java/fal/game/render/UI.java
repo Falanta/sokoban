@@ -7,6 +7,7 @@ import static fal.game.Main.statistic_timer;
 import static fal.game.Main.time_formatter;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -18,6 +19,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,7 @@ import fal.game.Client;
 import fal.game.Main;
 import fal.game.network.Message;
 import fal.game.world.Body;
+import fal.game.world.LevelMap;
 
 public class UI {
 
@@ -41,6 +44,7 @@ public class UI {
     public static Map<String,UIContainer> container_styles = new HashMap<String,UIContainer>();
     private boolean text_shadow = true;
     public Map<String,UIButton> buttons = new HashMap<String,UIButton>();
+    public ArrayList<UIButton> select_level_buttons = new ArrayList<UIButton>();
     public void DrawText(String text, int pos_x, int pos_y, float size, int height, String font_name, boolean shadow){
         font_name = (font_name == null)?"fonts/small_sokoban.ttf":font_name;
         BitmapFont font = manager.assetManager.get(font_name,BitmapFont.class);
@@ -145,6 +149,14 @@ public class UI {
         buttons.put("game.restart",new UIButton("Restart",new Vector2(this.ui_size.x/2-68,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-92,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
     }
+    public void GenerateLevelSelectButtons(){
+        int y = 0;
+        for(String level_name: this.owner.levels_list){
+            this.select_level_buttons.add(new UIButton(level_name,new Vector2(-this.ui_size.x/2+8,(int)this.ui_size.y/2-16-y*16),new Vector2(128, 8),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+            y += 1;
+        }
+        Debug(" ! LEVELS: "+this.select_level_buttons.toString());
+    }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;
         if(delta != 1) {
@@ -204,7 +216,14 @@ public class UI {
             }
             this.DrawText("Play\nCustomize\nSettings",(int) this.ui_size.x/4,0,2,16,null,true);
         }
-
+    }
+    public void DrawSelectLevel(){
+        StringBuilder levels_list = new StringBuilder();
+        for(UIButton button: this.select_level_buttons){
+            button.Draw(this.owner.batch,1,this.owner.state.cursor_pos);
+            levels_list.append(button.name).append("\n");
+        }
+        DrawTextBuilder(levels_list,(int) -this.ui_size.x/2+10,(int) this.ui_size.y/2-9,1,16,null,true);
     }
     public void DrawCustomizeMenu(){
         this.buttons.get("customize.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);

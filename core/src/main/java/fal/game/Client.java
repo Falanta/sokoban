@@ -1,6 +1,7 @@
 package fal.game;
 
 import static fal.game.Main.ConnectMe;
+import static fal.game.Main.Debug;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
@@ -200,6 +201,7 @@ public class Client {
     public Camera cam;
     public UI main_interface;
     public Map<String,Tile> tiles_pallete;
+    public ArrayList<String> levels_list = new ArrayList<String>();
     public static final Vector2 tiles_size = new Vector2(12,12);
     public PlayerController controller;
     public ClientState state = new ClientState();
@@ -236,6 +238,8 @@ public class Client {
         manager.LoadAll();
         this.main_interface = new UI(this);
         this.LoadTiles("tiles");
+        this.LoadLevels("maps");
+        this.main_interface.GenerateLevelSelectButtons();
 
         for (TextureAtlas.AtlasRegion region : manager.atlas.getRegions()) {
             if(region.name.contains("entities/player")){
@@ -289,6 +293,23 @@ public class Client {
             }
         }
         Debug("  - "+this.tiles_pallete.toString());
+    }
+
+    public void LoadLevels(String path){
+        Debug(String.format("Loading levels in %s...",path));
+        FileHandle dir = Gdx.files.internal(path);
+
+        if (!dir.exists() || !dir.isDirectory()) {
+            Debug(String.format(" - There is no assets/%s folder",path));
+            return;
+        }
+        for (FileHandle file : dir.list()) {
+            Debug(String.format(" - %s...",file.name()));
+            if (!file.isDirectory() && file.extension().equals("map")) {
+                String file_name = file.nameWithoutExtension();
+                this.levels_list.add(file_name);
+            }
+        }
     }
     public void UpdateMusicVolume(float volume){
         manager.GetMusic("sounds/no_enemy_start_msc.ogg").setVolume(volume);
