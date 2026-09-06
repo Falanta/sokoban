@@ -378,6 +378,13 @@ ui/home
   orig: 8, 8
   offset: 0, 0
   index: -1
+ui/note
+  rotate: false
+  xy: 41, 1
+  size: 8, 8
+  orig: 8, 8
+  offset: 0, 0
+  index: -1
 
 main_atlas6.png
 size: 256, 128

@@ -130,6 +130,9 @@ public class UI {
 //        container_styles.put("button_02_h",new UIContainer("styles/button_02_h"));
 //        container_styles.put("button_02_p",new UIContainer("styles/button_02_p"));
 
+
+        buttons.put("global.mute",new UIButton("Mute",new Vector2(this.ui_size.x/2-20,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+
         buttons.put("main.play",new UIButton("Play",new Vector2(this.ui_size.x/4-2,-14),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("main.customize",new UIButton("Customize",new Vector2(this.ui_size.x/4-2,-46),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("main.settings",new UIButton("Settings",new Vector2(this.ui_size.x/4-2,-78),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
@@ -138,9 +141,9 @@ public class UI {
         buttons.put("customize.next",new UIButton("Next",new Vector2(this.ui_size.x/4,-8),new Vector2(16, 16),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("customize.prev",new UIButton("Prev",new Vector2(-this.ui_size.x/4-16,-8),new Vector2(16, 16),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
 
-        buttons.put("game.back",new UIButton("Back",new Vector2(this.ui_size.x/2-20,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
-        buttons.put("game.restart",new UIButton("Restart",new Vector2(this.ui_size.x/2-44,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
-        buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-68,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+        buttons.put("game.back",new UIButton("Back",new Vector2(this.ui_size.x/2-44,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+        buttons.put("game.restart",new UIButton("Restart",new Vector2(this.ui_size.x/2-68,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+        buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-92,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
     }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;
@@ -218,11 +221,17 @@ public class UI {
     public void DrawGameOverlay(){
         this.buttons.get("game.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
         this.buttons.get("game.restart").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.owner.batch.draw(manager.GetRegion("ui/home"), this.ui_size.x/2-22,this.ui_size.y/2-22,16,16);
-        this.owner.batch.draw(manager.GetRegion("ui/arrow_reload"), this.ui_size.x/2-46,this.ui_size.y/2-22,16,16);
+        this.owner.batch.draw(manager.GetRegion("ui/home"), this.ui_size.x/2-46,this.ui_size.y/2-22,16,16);
+        this.owner.batch.draw(manager.GetRegion("ui/arrow_reload"), this.ui_size.x/2-70,this.ui_size.y/2-22,16,16);
         if(!this.owner.state.level_running) {
             this.buttons.get("game.next").Draw(this.owner.batch, 2, this.owner.state.cursor_pos);
-            this.owner.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x / 2 - 70, this.ui_size.y / 2 - 22, 16, 16);
+            this.owner.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x / 2 - 94, this.ui_size.y / 2 - 22, 16, 16);
+        }
+    }
+    public void DrawMuteButton(){
+        this.buttons.get("global.mute").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        if(!this.owner.state.music_mute) {
+            this.owner.batch.draw(manager.GetRegion("ui/note"), this.ui_size.x / 2 - 22, this.ui_size.y / 2 - 22, 16, 16);
         }
     }
     public void DrawLevelInformation(){

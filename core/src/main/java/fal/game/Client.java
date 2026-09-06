@@ -64,6 +64,7 @@ public class Client {
         public String menu = "main";
         public boolean level_running = false;
         public Vector2 cursor_pos = new Vector2();
+        public boolean music_mute = false;
         public ClientState(){
         }
 
@@ -244,6 +245,11 @@ public class Client {
         }
 
         manager.PlaySound("sounds/empty_snd.ogg",0.0f,1.0f,0.0f);
+        manager.GetMusic("sounds/no_enemy_loop_msc.ogg").setLooping(true);
+        manager.GetMusic("sounds/no_enemy_start_msc.ogg").setOnCompletionListener(music -> manager.GetMusic("sounds/no_enemy_loop_msc.ogg").play());
+
+        manager.GetMusic("sounds/no_enemy_start_msc.ogg").play();
+        this.UpdateMusicVolume(0.05f);
 
         this.world = new World();
 
@@ -283,6 +289,10 @@ public class Client {
             }
         }
         Debug("  - "+this.tiles_pallete.toString());
+    }
+    public void UpdateMusicVolume(float volume){
+        manager.GetMusic("sounds/no_enemy_start_msc.ogg").setVolume(volume);
+        manager.GetMusic("sounds/no_enemy_loop_msc.ogg").setVolume(volume);
     }
     public void Connect(CSConnection connection,String server_id){
         Debug(String.format("Joining: %s...",server_id));
@@ -625,15 +635,18 @@ public class Client {
                 } else {
                     this.OpenMenu("main");
                 }
+                this.main_interface.DrawMuteButton();
                 break;
             }
             case "main": {
                 this.main_interface.DrawMainMenu();
+                this.main_interface.DrawMuteButton();
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
             case "customize": {
                 this.main_interface.DrawCustomizeMenu();
+                this.main_interface.DrawMuteButton();
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
@@ -790,22 +803,21 @@ public class Client {
                 UIButton restart_button = this.main_interface.buttons.get("game.restart");
                 UIButton next_button = this.main_interface.buttons.get("game.next");
                 UIButton back_button = this.main_interface.buttons.get("game.back");
+                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
                     if (restart_button.Read()) {
-//                        this.MakeOrder("set_map " + world.map.name, false);
-//                        this.AddOrder("get_map");
                         SendMessage("/set_map " + world.map.name);
                     }
                     if (next_button.Read()) {
-//                        this.MakeOrder("next_level", false);
-//                        this.AddOrder("get_map");
                         SendMessage("/next");
                     }
                     if (back_button.Read()) {
-//                        Leave();
-//                        this.world.map = new LevelMap("empty");
                         SendMessage("/leave");
                         this.OpenMenu("main");
+                    }
+                    if (mute_button.Read()) {
+                        this.state.music_mute = !this.state.music_mute;
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
                     }
                 }
                 break;
@@ -813,13 +825,19 @@ public class Client {
             case "main":{
                 UIButton play_button = this.main_interface.buttons.get("main.play");
                 UIButton customize_button = this.main_interface.buttons.get("main.customize");
+                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
                     if (play_button.Read()) {
                         ConnectMe(this);
+                        SendMessage("/set_map level_01");
                         this.OpenMenu("game");
                     }
                     if (customize_button.Read()) {
                         this.OpenMenu("customize");
+                    }
+                    if (mute_button.Read()) {
+                        this.state.music_mute = !this.state.music_mute;
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
                     }
                 }
                 break;
@@ -828,8 +846,10 @@ public class Client {
                 UIButton back_button = this.main_interface.buttons.get("customize.back");
                 UIButton prev_button = this.main_interface.buttons.get("customize.prev");
                 UIButton next_button = this.main_interface.buttons.get("customize.next");
+                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
                     if (back_button.Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.5f,0.0f);
                         this.OpenMenu("main");
                     }
                     if (next_button.Read()) {
@@ -841,6 +861,10 @@ public class Client {
                         int actual = this.state.available_skins.indexOf(this.state.skin_texture);
                         this.state.skin_texture = this.state.available_skins.get(actual-1 < 0?this.state.available_skins.size()-1:actual-1);
                         manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.9f,0.0f);
+                    }
+                    if (mute_button.Read()) {
+                        this.state.music_mute = !this.state.music_mute;
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
                     }
                 }
                 break;
