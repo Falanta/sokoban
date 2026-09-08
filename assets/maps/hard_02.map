@@ -1,0 +1,16 @@
+{"assets":{"#":"stone_plate_wall","@":"stone_wall","O":"wooden_wall",".":"bricks_floor","x":"stone_plate_floor",",":"wooden_floor","b":"stone_plate_alt_floor"},"size":[7,8],"spawn_pos":[3,6]}
+####
+#,,#
+O,,#@@@
+#,,x..@
+##xxb.@
+@..b.@@
+@....@
+@@@@@@
+{"action":"spawn","type":"crate","pos":[3,3],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"crate","pos":[3,4],"texture":"tiles/crate_02_e"}
+{"action":"spawn","type":"crate","pos":[2,4],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"anchor","pos":[3,4],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[4,4],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[3,5],"texture":"tiles/anchor"}
+

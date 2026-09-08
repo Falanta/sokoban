@@ -1,0 +1,14 @@
+{"assets":{"#":"stone_tiles_wall",".":"plastic_floor"},"size":[8,6],"spawn_pos":[3,1]}
+  #####
+  #...#
+###...##
+#......#
+#......#
+########
+{"action":"spawn","type":"crate","pos":[4,2],"texture":"tiles/crate_02_e"}
+{"action":"spawn","type":"crate","pos":[4,3],"texture":"tiles/crate_02_e"}
+{"action":"spawn","type":"crate","pos":[3,3],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"anchor","pos":[4,1],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[4,2],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[4,3],"texture":"tiles/anchor"}
+

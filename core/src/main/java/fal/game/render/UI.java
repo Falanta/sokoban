@@ -148,12 +148,21 @@ public class UI {
         buttons.put("game.back",new UIButton("Back",new Vector2(this.ui_size.x/2-44,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("game.restart",new UIButton("Restart",new Vector2(this.ui_size.x/2-68,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-92,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+
+        buttons.put("level_select.back",new UIButton("Back",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
     }
     public void GenerateLevelSelectButtons(){
         int y = 0;
+        int x = 0;
+        short width = 48;
+        short height = 8;
         for(String level_name: this.owner.levels_list){
-            this.select_level_buttons.add(new UIButton(level_name,new Vector2(-this.ui_size.x/2+8,(int)this.ui_size.y/2-16-y*16),new Vector2(128, 8),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+            this.select_level_buttons.add(new UIButton(level_name,new Vector2(-this.ui_size.x/2+8+x*(width+8),(int)this.ui_size.y/2-height-8-y*(height+8)),new Vector2(width, height),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
             y += 1;
+            if(y == 8){
+                y = 0;
+                x += 1;
+            }
         }
         Debug(" ! LEVELS: "+this.select_level_buttons.toString());
     }
@@ -218,12 +227,16 @@ public class UI {
         }
     }
     public void DrawSelectLevel(){
-        StringBuilder levels_list = new StringBuilder();
+//        StringBuilder levels_list = new StringBuilder();
         for(UIButton button: this.select_level_buttons){
             button.Draw(this.owner.batch,1,this.owner.state.cursor_pos);
-            levels_list.append(button.name).append("\n");
+//            levels_list.append(button.name).append("\n");
+            DrawText(button.name,(int) button.pos.x+1,(int) button.pos.y+7,1,8,null,true);
         }
-        DrawTextBuilder(levels_list,(int) -this.ui_size.x/2+10,(int) this.ui_size.y/2-9,1,16,null,true);
+//        DrawTextBuilder(levels_list,(int) -this.ui_size.x/2+10,(int) this.ui_size.y/2-9,1,16,null,true);
+
+        this.buttons.get("level_select.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.DrawTextCentered("Back",0,(int) -this.ui_size.y/2+25,2,16,null,true);
     }
     public void DrawCustomizeMenu(){
         this.buttons.get("customize.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);

@@ -26,7 +26,7 @@ public class Main extends ApplicationAdapter {
         main_server = new Server("main");
         Thread main_server_thread = new Thread(main_server);
         main_server_thread.start();
-        player_client = new Client("SuperSmile123", new KeyboardControl());
+        player_client = new Client("Falanta", new KeyboardControl());
 
         //single_connection = new CSConnection(player_client,main_server);
     }

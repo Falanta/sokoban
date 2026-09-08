@@ -277,7 +277,7 @@ public class Server implements Runnable{
         this.world = new World();
 //        this.world.map = this.levels_list.get("level_01");
 //        this.world.InitLevel();
-        this.StartLevel("level_01");
+        this.StartLevel(null);
 
         Debug("Done!");
     }
@@ -453,6 +453,7 @@ public class Server implements Runnable{
         }
     }
     private void SendMap(String player_id){
+        if(this.world == null || this.world.map == null || this.world.map.matrix == null){return;}
         Map data = new HashMap();
         data.put("get_map_answer",this.world.map.MatrixCopy());
         data.put("get_map_answer.name",this.world.map.name+"");
@@ -485,10 +486,12 @@ public class Server implements Runnable{
     public void StartLevel(String level_name){
         Debug("Start level: "+level_name);
         DeleteAllBodies();
-        this.world.map = this.levels_list.get(level_name);
-        this.ProvideMap();
-        this.world.InitLevel();
-        this.ProvideAllBodies();
+        if(level_name != null) {
+            this.world.map = this.levels_list.get(level_name);
+            this.ProvideMap();
+            this.world.InitLevel();
+            this.ProvideAllBodies();
+        }
         for(String player_id: this.players.keySet()){
             String texture_name = this.players.get(player_id).body.texture;
             DeletePlayer(player_id);
