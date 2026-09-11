@@ -170,6 +170,27 @@ styles/template_style
   orig: 5, 5
   offset: 0, 0
   index: -1
+styles/text_input_01_h
+  rotate: false
+  xy: 36, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/text_input_01_p
+  rotate: false
+  xy: 43, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/text_input_01_s
+  rotate: false
+  xy: 43, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
 
 main_atlas4.png
 size: 512, 16

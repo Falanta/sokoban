@@ -58,7 +58,7 @@ public class UI {
         font.draw(this.owner.batch,text,pos_x,pos_y);
         font.getData().setScale(1.0f);
     }
-    public void DrawTextCentered(String text, int pos_x, int pos_y, float size, int height, String font_name,boolean shadow){
+    public void DrawTextColoredCentered(String text, int pos_x, int pos_y, float size, int height, String font_name,Color color,boolean shadow){
         font_name = (font_name == null)?"fonts/small_sokoban.ttf":font_name;
         BitmapFont font = manager.assetManager.get(font_name,BitmapFont.class);
         font.getData().setScale(size);
@@ -69,8 +69,15 @@ public class UI {
             font.draw(this.owner.batch,text,pos_x+size-(glyphLayout.width/2),pos_y-size+(glyphLayout.height/2));
             font.setColor(1,1,1,1);
         }
+        if(color != null) {
+            font.setColor(color);
+        }
         font.draw(this.owner.batch,text,pos_x-(glyphLayout.width/2),pos_y+(glyphLayout.height/2));
+        font.setColor(1,1,1,1);
         font.getData().setScale(1.0f);
+    }
+    public void DrawTextCentered(String text, int pos_x, int pos_y, float size, int height, String font_name,boolean shadow){
+        DrawTextColoredCentered(text,pos_x,pos_y,size,height,font_name,null,shadow);
     }
     public void DrawTextBuilder(StringBuilder text, int pos_x, int pos_y, float size, int height, String font_name, boolean shadow){
         font_name = (font_name == null)?"fonts/small_sokoban.ttf":font_name;
@@ -144,6 +151,7 @@ public class UI {
         buttons.put("customize.back",new UIButton("Back",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("customize.next",new UIButton("Next",new Vector2(this.ui_size.x/4,-8),new Vector2(16, 16),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("customize.prev",new UIButton("Prev",new Vector2(-this.ui_size.x/4-16,-8),new Vector2(16, 16),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
+        buttons.put("customize.nickname",new UIButton("Nickname",new Vector2(-this.ui_size.x/4,-this.ui_size.y/2+48),new Vector2(this.ui_size.x/2, 16),container_styles.get("text_input_01_s"),container_styles.get("text_input_01_h"),container_styles.get("text_input_01_p"),new Color(1,1,1,1),false));
 
         buttons.put("game.back",new UIButton("Back",new Vector2(this.ui_size.x/2-44,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
         buttons.put("game.restart",new UIButton("Restart",new Vector2(this.ui_size.x/2-68,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
@@ -245,6 +253,17 @@ public class UI {
         this.buttons.get("customize.prev").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
         this.owner.batch.draw(manager.GetRegion("ui/arrow_left"), -this.ui_size.x/4-16,-8,16,16);
         this.DrawTextCentered("Back",0,(int) -this.ui_size.y/2+25,2,16,null,true);
+
+        this.buttons.get("customize.nickname").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        if(this.owner.state.chat_line_open){
+            String nickname_text = this.owner.id;
+            if(milli_time%1000>500){
+                nickname_text = String.format("<%s>",this.owner.id);
+            }
+            this.DrawTextColoredCentered(nickname_text, 0, (int) -this.ui_size.y / 2 + 57, 2, 16, null, new Color(0.91f,0.96f,0.44f,1.0f), true);
+        }else {
+            this.DrawTextCentered(this.owner.id, 0, (int) -this.ui_size.y / 2 + 57, 2, 16, null, true);
+        }
 
         this.owner.batch.draw(manager.GetRegion("entities/"+this.owner.state.skin_texture), -30, -30, 60, 60);
         String formatted_skin = this.owner.state.skin_texture.replace("player_", "").replace("_", " ").substring(0, 1).toUpperCase() + this.owner.state.skin_texture.replace("player_", "").replace("_", " ").substring(1);

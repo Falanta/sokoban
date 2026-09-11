@@ -66,7 +66,7 @@ public class Client {
         public boolean level_running = false;
         public boolean map_loaded = false;
         public Vector2 cursor_pos = new Vector2();
-        public boolean music_mute = false;
+        public boolean music_mute = true;
         public ClientState(){
         }
 
@@ -254,7 +254,11 @@ public class Client {
         manager.GetMusic("sounds/no_enemy_start_msc.ogg").setOnCompletionListener(music -> manager.GetMusic("sounds/no_enemy_loop_msc.ogg").play());
 
         manager.GetMusic("sounds/no_enemy_start_msc.ogg").play();
-        this.UpdateMusicVolume(0.05f);
+        if(!this.state.music_mute) {
+            this.UpdateMusicVolume(0.05f);
+        }else{
+            this.UpdateMusicVolume(0.0f);
+        }
 
         this.world = new World();
 
@@ -337,6 +341,9 @@ public class Client {
             case "/leave": {
                 Leave();
                 this.world.map = new LevelMap("empty");
+                this.world.bodies.clear();
+                this.state.map_loaded = false;
+                this.state.level_running = false;
                 break;
             }
             case "/join": {
@@ -352,6 +359,8 @@ public class Client {
             }
             case "/set_map": {
                 if (arg.length > 1) {
+                    this.world.bodies.clear();
+                    this.waiting_orders.remove("get_map_answer");
                     String map_name = arg[1];
                     this.state.map_loaded = false;
                     this.MakeOrder("set_map " + map_name, false);
@@ -362,12 +371,16 @@ public class Client {
                 break;
             }
             case "/next": {
+                this.world.bodies.clear();
+                this.waiting_orders.remove("get_map_answer");
                 this.state.map_loaded = false;
                 this.MakeOrder("next_level", false);
                 this.AddOrder("get_map");
                 break;
             }
             case "/prev": {
+                this.world.bodies.clear();
+                this.waiting_orders.remove("get_map_answer");
                 this.state.map_loaded = false;
                 this.MakeOrder("prev_level", false);
                 this.AddOrder("get_map");
@@ -515,7 +528,7 @@ public class Client {
         boolean no_crates = false;
         for(Body body: this.world.bodies.values()){
             if(body.type.equals("crate")){
-                if(no_crates){no_crates = true;}
+                if(!no_crates){no_crates = true;}
                 if((body.texture.charAt(body.texture.length()-1)=='d')) {
                     return false;
                 }
@@ -776,8 +789,7 @@ public class Client {
         ((KeyboardControl)this.controller).UpdateMouse();
         switch (this.state.menu) {
             case "game": {
-                boolean chatLineOpen = this.state.chat_line_open;
-                if (!chatLineOpen) {
+                if (!this.state.chat_line_open) {
                     if (this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()) {
                         this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed, 1.0f);
                     } else if (!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()) {
@@ -795,11 +807,7 @@ public class Client {
                     }
                     if (this.controller.ChatHideInteraction()) {
                         if (!(boolean) this.state.chat_hide_interaction) {
-                            if (this.state.chat_hide) {
-                                this.state.chat_hide = false; // Hide chat
-                            } else {
-                                this.state.chat_hide = true; // Show chat
-                            }
+                            this.state.chat_hide = !this.state.chat_hide;
                         }
                     }
                     if (this.controller.MoveUp() && !this.controller.MoveDown()) {
@@ -889,32 +897,59 @@ public class Client {
                 break;
             }
             case "customize":{
-                UIButton back_button = this.main_interface.buttons.get("customize.back");
-                UIButton prev_button = this.main_interface.buttons.get("customize.prev");
-                UIButton next_button = this.main_interface.buttons.get("customize.next");
-                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
-                    if (back_button.Read()) {
+                    if (this.main_interface.buttons.get("customize.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.5f,0.0f);
+                        this.state.chat_line_open = false;
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(false);
+                        }
                         this.OpenMenu("main");
                         break;
                     }
-                    if (next_button.Read()) {
+                    if (this.main_interface.buttons.get("customize.next").Read()) {
                         int actual = this.state.available_skins.indexOf(this.state.skin_texture);
                         this.state.skin_texture = this.state.available_skins.get(actual+1 >= this.state.available_skins.size()?0:actual+1);
                         manager.PlaySound("sounds/pop_snd.ogg",0.25f,1.0f,0.0f);
                         break;
                     }
-                    if (prev_button.Read()) {
+                    if (this.main_interface.buttons.get("customize.prev").Read()) {
                         int actual = this.state.available_skins.indexOf(this.state.skin_texture);
                         this.state.skin_texture = this.state.available_skins.get(actual-1 < 0?this.state.available_skins.size()-1:actual-1);
                         manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.9f,0.0f);
                         break;
                     }
-                    if (mute_button.Read()) {
+                    if (this.main_interface.buttons.get("global.mute").Read()) {
                         this.state.music_mute = !this.state.music_mute;
                         this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
                         break;
+                    }
+                    if (this.main_interface.buttons.get("customize.nickname").Read()){
+                        if(this.state.chat_line_open) {
+                            this.state.chat_line_open = false;
+                            if (this.controller instanceof KeyboardControl) {
+                                ((KeyboardControl) this.controller).setChatting(false);
+                            }
+                        }else {
+                            this.state.chat_line_open = true;
+                            if (this.controller instanceof KeyboardControl) {
+                                ((KeyboardControl) this.controller).setChatting(true);
+                            }
+                            ((KeyboardControl) this.controller).typedBuffer.setLength(0);
+                            ((KeyboardControl) this.controller).typedBuffer.append(this.id);
+                        }
+                        break;
+                    }
+                }
+                if(this.state.chat_line_open) {
+                    if (this.controller instanceof KeyboardControl) {
+                        this.id = ((KeyboardControl) this.controller).typedBuffer.toString();
+                    }
+                    if (this.controller.ChatInteraction()) {
+                        this.state.chat_line_open = false;
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(false);
+                        }
                     }
                 }
                 break;
