@@ -67,6 +67,9 @@ public class Client {
         public boolean map_loaded = false;
         public Vector2 cursor_pos = new Vector2();
         public boolean music_mute = true;
+        public String music_name = "sounds/kros_loop_msc.ogg";
+        public String music_loop_name = "sounds/kros_loop_msc.ogg";
+        public float music_default_volume = 0.1f;
         public ClientState(){
         }
 
@@ -250,12 +253,15 @@ public class Client {
         }
 
         manager.PlaySound("sounds/empty_snd.ogg",0.0f,1.0f,0.0f);
-        manager.GetMusic("sounds/no_enemy_loop_msc.ogg").setLooping(true);
-        manager.GetMusic("sounds/no_enemy_start_msc.ogg").setOnCompletionListener(music -> manager.GetMusic("sounds/no_enemy_loop_msc.ogg").play());
 
-        manager.GetMusic("sounds/no_enemy_start_msc.ogg").play();
+        manager.GetMusic(this.state.music_loop_name).setLooping(true);
+        if(!this.state.music_name.equals(this.state.music_loop_name)) {
+            manager.GetMusic(this.state.music_name).setOnCompletionListener(music -> manager.GetMusic(this.state.music_loop_name).play());
+        }
+        manager.GetMusic(this.state.music_name).play();
+
         if(!this.state.music_mute) {
-            this.UpdateMusicVolume(0.05f);
+            this.UpdateMusicVolume(this.state.music_default_volume);
         }else{
             this.UpdateMusicVolume(0.0f);
         }
@@ -316,8 +322,8 @@ public class Client {
         }
     }
     public void UpdateMusicVolume(float volume){
-        manager.GetMusic("sounds/no_enemy_start_msc.ogg").setVolume(volume);
-        manager.GetMusic("sounds/no_enemy_loop_msc.ogg").setVolume(volume);
+        manager.GetMusic(this.state.music_name).setVolume(volume);
+        manager.GetMusic(this.state.music_loop_name).setVolume(volume);
     }
     public void Connect(CSConnection connection,String server_id){
         Debug(String.format("Joining: %s...",server_id));
@@ -624,9 +630,9 @@ public class Client {
                     Debug("- Move count");
                     if(input_data == null){
                         if(this.state.player_step_memory) {
-                            manager.PlaySound("sounds/step_snd.ogg",0.25f,1.0f,0.0f);
+                            manager.PlaySound("sounds/step_snd_2.ogg",0.5f,1.0f,0.0f);
                         }else{
-                            manager.PlaySound("sounds/step_snd.ogg",0.25f,1.2f,0.0f);
+                            manager.PlaySound("sounds/step_snd_2.ogg",0.5f,1.2f,0.0f);
                         }
                         this.state.player_step_memory = !this.state.player_step_memory;
                         if(this.state.level_running) {
@@ -787,6 +793,7 @@ public class Client {
     public void Control(){
         if(this.controller == null) {return;}
         ((KeyboardControl)this.controller).UpdateMouse();
+        UIButton mute_button = this.main_interface.buttons.get("global.mute");
         switch (this.state.menu) {
             case "game": {
                 if (!this.state.chat_line_open) {
@@ -850,47 +857,50 @@ public class Client {
                         }
                     }
                 }
-                UIButton restart_button = this.main_interface.buttons.get("game.restart");
-                UIButton next_button = this.main_interface.buttons.get("game.next");
-                UIButton back_button = this.main_interface.buttons.get("game.back");
-                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
-                    if (restart_button.Read()) {
+                    if (this.main_interface.buttons.get("game.restart").Read()) {
+                        manager.PlaySound("sounds/reload_snd.ogg",0.5f,1.0f,0.0f);
                         SendMessage("/set_map " + world.map.name);
                     }
-                    if (next_button.Read()) {
+                    if (this.main_interface.buttons.get("game.next").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
                         SendMessage("/next");
                     }
-                    if (back_button.Read()) {
+                    if (this.main_interface.buttons.get("game.back").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
                         SendMessage("/leave");
                         this.OpenMenu("main");
                     }
                     if (mute_button.Read()) {
                         this.state.music_mute = !this.state.music_mute;
-                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:this.state.music_default_volume);
                     }
                 }
                 break;
             }
             case "main":{
-                UIButton play_button = this.main_interface.buttons.get("main.play");
-                UIButton customize_button = this.main_interface.buttons.get("main.customize");
-                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
-                    if (play_button.Read()) {
+                    if (this.main_interface.buttons.get("main.play").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
 //                        ConnectMe(this);
 //                        SendMessage("/set_map level_01");
 //                        this.OpenMenu("game");
                         this.OpenMenu("level_select");
                         break;
                     }
-                    if (customize_button.Read()) {
+                    if (this.main_interface.buttons.get("main.customize").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
                         this.OpenMenu("customize");
                         break;
                     }
                     if (mute_button.Read()) {
                         this.state.music_mute = !this.state.music_mute;
-                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:this.state.music_default_volume);
+                        break;
+                    }
+                    if (this.main_interface.buttons.get("main.settings").Read()){
+                        manager.GetSound("sounds/settings_snd.ogg").stop();
+                        manager.PlaySound("sounds/settings_snd.ogg",0.25f,1.0f,0.0f);
                         break;
                     }
                 }
@@ -919,9 +929,9 @@ public class Client {
                         manager.PlaySound("sounds/pop_snd.ogg",0.25f,0.9f,0.0f);
                         break;
                     }
-                    if (this.main_interface.buttons.get("global.mute").Read()) {
+                    if (mute_button.Read()) {
                         this.state.music_mute = !this.state.music_mute;
-                        this.UpdateMusicVolume(this.state.music_mute?0.0f:0.05f);
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:this.state.music_default_volume);
                         break;
                     }
                     if (this.main_interface.buttons.get("customize.nickname").Read()){
@@ -955,21 +965,20 @@ public class Client {
                 break;
             }
             case "level_select":{
-                UIButton back_button = this.main_interface.buttons.get("level_select.back");
-                UIButton mute_button = this.main_interface.buttons.get("global.mute");
                 if(this.controller.MouseInteraction()) {
-                    if (back_button.Read()) {
+                    if (this.main_interface.buttons.get("level_select.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg", 0.25f, 0.5f, 0.0f);
                         this.OpenMenu("main");
                         break;
                     }
                     if (mute_button.Read()) {
                         this.state.music_mute = !this.state.music_mute;
-                        this.UpdateMusicVolume(this.state.music_mute ? 0.0f : 0.05f);
+                        this.UpdateMusicVolume(this.state.music_mute?0.0f:this.state.music_default_volume);
                         break;
                     }
                     for(UIButton button: this.main_interface.select_level_buttons){
                         if(button.Read()){
+                            manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
                             this.RunLevel(button.name);
                         }
                     }

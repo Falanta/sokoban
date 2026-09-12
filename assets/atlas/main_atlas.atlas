@@ -225,6 +225,13 @@ tiles/crate
   orig: 12, 12
   offset: 0, 0
   index: 1
+tiles/crate_01_d
+  rotate: false
+  xy: 43, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
 tiles/crate
   rotate: false
   xy: 57, 1
@@ -239,7 +246,14 @@ tiles/crate_02_d
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/crate_01_d
+tiles/crate
+  rotate: false
+  xy: 71, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: 3
+tiles/crate_03_d
   rotate: false
   xy: 71, 1
   size: 12, 12
@@ -260,107 +274,114 @@ tiles/crate_02_e
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_floor
+tiles/crate_03_e
   rotate: false
   xy: 113, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_tiles_floor
+tiles/plastic_floor
   rotate: false
   xy: 127, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_tiles_wall
+tiles/plastic_tiles_floor
   rotate: false
   xy: 141, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/plastic_wall
+tiles/plastic_tiles_wall
   rotate: false
   xy: 155, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_floor
+tiles/plastic_wall
   rotate: false
   xy: 169, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_plate_alt_floor
+tiles/stone_floor
   rotate: false
   xy: 183, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_plate_alt_wall
+tiles/stone_plate_alt_floor
   rotate: false
   xy: 197, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_plate_floor
+tiles/stone_plate_alt_wall
   rotate: false
   xy: 211, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_plate_wall
+tiles/stone_plate_floor
   rotate: false
   xy: 225, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_tiles_floor
+tiles/stone_plate_wall
   rotate: false
   xy: 239, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_tiles_wall
+tiles/stone_tiles_floor
   rotate: false
   xy: 253, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/stone_wall
+tiles/stone_tiles_wall
   rotate: false
   xy: 267, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/template
+tiles/stone_wall
   rotate: false
   xy: 281, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_floor
+tiles/template
   rotate: false
   xy: 295, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_wall
+tiles/wooden_floor
   rotate: false
   xy: 309, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_wall
+  rotate: false
+  xy: 323, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
