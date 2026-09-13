@@ -7,11 +7,13 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
+import com.badlogic.gdx.assets.loaders.ShaderProgramLoader;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -19,6 +21,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.utils.JsonReader;
@@ -60,6 +64,7 @@ public class Client {
         public int move_counter = -1;
         public long actual_time = 0;
         public long start_time = 0;
+        public long shader_anim_start_time = System.currentTimeMillis();
         public long menu_animation_start_time = 0;
         public boolean logo_anim_loaded = false;
         public String menu = "main";
@@ -83,6 +88,7 @@ public class Client {
             FileHandleResolver resolver = new InternalFileHandleResolver();
             assetManager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
             assetManager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
+            assetManager.setLoader(ShaderProgram.class, ".frag", new ShaderProgramLoader(resolver));
         }
         public void LoadFont(String path, int size) {
             fal.game.Main.Debug(String.format("Loading font %s",path));
@@ -95,6 +101,36 @@ public class Client {
             fontParams.fontParameters.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
             fontParams.fontParameters.characters = "1234567890_.,:;-+()[]{}<>/\\!?%~*ABCDEFGHIJKLMNO '\"`=&@$#^PQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяЂђЈјЉљЊњЋћЏџҐґЄєІіЇїЎў";;
             assetManager.load(path, BitmapFont.class, fontParams);
+        }
+        public void ParseShaders(String folderPath) {
+            Main.Debug(String.format("- Loading shaders from %s...", folderPath));
+            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folderPath);
+            if (!dir.exists()) {
+                Main.Debug(String.format("ERROR: There is no folder %s", folderPath));
+                return;
+            }
+
+            for (com.badlogic.gdx.files.FileHandle file : dir.list()) {
+                if (!file.isDirectory()) {
+                    String extension = file.extension().toLowerCase();
+                    Main.Debug(String.format(" - %s",file.name()));
+                    if (extension.equals("frag")) {
+                        String fragPath = file.path();
+                        String baseName = file.nameWithoutExtension();
+                        String vertPath = folderPath + "/" + baseName + ".vert";
+                        if (!Gdx.files.internal(vertPath).exists()) {
+                            vertPath = "shaders/default.vert";
+                        }
+                        LoadShader(vertPath, fragPath);
+                    }
+                }
+            }
+        }
+        public void LoadShader(String vertPath, String fragPath) { // Это написала нейросеть и я честно не очень понимаю как оно устроено
+            Main.Debug(String.format("Loading shader: vert=%s, frag=%s", vertPath, fragPath));
+            ShaderProgramLoader.ShaderProgramParameter params = new ShaderProgramLoader.ShaderProgramParameter();
+            params.vertexFile = vertPath;
+            assetManager.load(fragPath, ShaderProgram.class, params);
         }
         public void ParseSounds(String folderPath) {
             Main.Debug(String.format("- Loading %s...", folderPath));
@@ -132,6 +168,8 @@ public class Client {
             LoadFont("fonts/small_sokoban.ttf",8);
             LoadFont("fonts/consolas.ttf",12);
             ParseSounds("sounds");
+            ShaderProgram.pedantic = false;
+            ParseShaders("shaders");
             assetManager.finishLoading();
             atlas = assetManager.get("atlas/main_atlas.atlas", TextureAtlas.class);
             Main.Debug(String.format("Done! Assets (%s):",assetManager.getLoadedAssets()));
@@ -164,6 +202,13 @@ public class Client {
         }
         public Music GetMusic(String path) {
             return assetManager.get(path, Music.class);
+        }
+        public ShaderProgram GetShader(String fragPath) {
+            ShaderProgram shader = assetManager.get(fragPath, ShaderProgram.class);
+            if (!shader.isCompiled()) {
+                Main.Debug("ERROR: Shader compilation failed:\n" + shader.getLog());
+            }
+            return shader;
         }
         public void dispose() {
             assetManager.dispose();
@@ -208,6 +253,7 @@ public class Client {
     public ArrayList<String> levels_list = new ArrayList<String>();
     public static final Vector2 tiles_size = new Vector2(12,12);
     public PlayerController controller;
+    public FrameBuffer frame_buffer;
     public ClientState state = new ClientState();
 //    private Map<String,Object> control_memory = new HashMap<>();
     private void Debug(String text){
@@ -220,6 +266,11 @@ public class Client {
         this.controller = controller;
         Gdx.input.setInputProcessor((InputProcessor) controller);
         this.cam = new Camera();
+        this.frame_buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 480, 250, false);
+        this.frame_buffer.getColorBufferTexture().setFilter(
+            com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest,
+            com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest
+        );
 
         this.id = id;
         this.active_connection = null;
@@ -709,7 +760,7 @@ public class Client {
         this.batch.end();
     }
     public void RenderBody(Body body, int offset_x,int offset_y){
-        body.UpdateDrawPos(0.9f);
+        body.UpdateDrawPos(0.67f);
         this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
         if(body.show_name){
             this.main_interface.DrawTextCentered(body.id,(int) PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,(int) PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y,1f,10,null,true);
@@ -1017,6 +1068,7 @@ public class Client {
 
         if(render) {
             this.cam.Update();
+            this.frame_buffer.begin();
 
             if(this.state.level_running || !this.state.menu.equals("game")) {
                 ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
@@ -1033,6 +1085,27 @@ public class Client {
             }
             batch.end();
             this.RenderUI();
+            this.frame_buffer.end();
+
+            ScreenUtils.clear(0.0f, 0.0f, 1.0f, 1f);
+
+            batch.setProjectionMatrix(main_interface.ui_viewport.getCamera().combined);
+            batch.setShader(manager.GetShader("shaders/passthrough.frag"));
+//            batch.getShader().setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            batch.begin();
+            // Передаем виртуальное разрешение буфера, а не размер окна!
+            batch.getShader().setUniformf("u_resolution", 480f, 250f);
+            batch.getShader().setUniformf("u_time", (float) (milli_time-this.state.shader_anim_start_time));
+            Debug((float) (milli_time-this.state.shader_anim_start_time)+"");
+
+            // Рисуем текстуру буфера на весь экран интерфейса
+            batch.draw(this.frame_buffer.getColorBufferTexture(),
+                -240, -125, // координаты левого нижнего угла (половина от 480x250)
+                480, 250,   // ширина и высота
+                0, 0, 1, 1);
+            batch.end();
+
+            batch.setShader(null);
         }
     }
     public void Delete(){

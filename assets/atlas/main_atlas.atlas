@@ -31,58 +31,72 @@ entities/player_flush
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_headstone
+entities/player_ge
   rotate: false
   xy: 29, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_panic
+entities/player_headstone
   rotate: false
   xy: 43, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_pidor
+entities/player_panic
   rotate: false
   xy: 57, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_rs
+entities/player_pidor
   rotate: false
   xy: 71, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_skull
+entities/player_rs
   rotate: false
   xy: 85, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_smirk
+entities/player_skull
   rotate: false
   xy: 99, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_welp
+entities/player_smirk
   rotate: false
   xy: 113, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_why_cry
+entities/player_welp
   rotate: false
   xy: 127, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_wheelchair
+  rotate: false
+  xy: 141, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_why_cry
+  rotate: false
+  xy: 155, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
