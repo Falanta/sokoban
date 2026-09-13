@@ -10,17 +10,20 @@ varying vec4 v_color;
 varying vec2 v_texCoords;
 
 float getBayer4x4(vec2 p) {
-    vec2 a = mod(p, 4.0);
-    float result = 0.0;
-    result += mod(a.x, 2.0) * 8.0 + floor(mod(a.x, 4.0) / 2.0) * 2.0;
-    result += mod(a.y, 2.0) * 4.0 + floor(mod(a.y, 4.0) / 2.0) * 1.0;
-    return (result + 0.5) / 16.0;
+    ivec2 c = ivec2(mod(p, 4.0));
+    const mat4 m = mat4(
+            vec4(0.0, 12.0, 3.0, 15.0), // x = 0
+            vec4(8.0, 4.0, 11.0, 7.0),  // x = 1
+            vec4(2.0, 14.0, 1.0, 13.0), // x = 2
+            vec4(10.0, 6.0, 9.0, 5.0)   // x = 3
+    );
+    return m[c.x][c.y] / 16.0;
 }
 
 void main() {
     vec4 tex_color = texture2D(u_texture, v_texCoords);
 
-    float mosaic_scale = 64.0;
+    float mosaic_scale = 128.0;
     float mosaic_scale_width = mosaic_scale * (u_resolution.x / u_resolution.y);
 
     vec2 cell_coord = vec2(
@@ -28,14 +31,21 @@ void main() {
             floor(v_texCoords.y * mosaic_scale)
     );
 
-    float bayer_threshold = getBayer4x4(cell_coord);
+    if(u_time <= 2.0){
 
-    float step_time = floor(u_time * 0.1) / mosaic_scale;
-    float gradient_value = -v_texCoords.y + 2 + (1-step_time);
+        float bayer_threshold = getBayer4x4(cell_coord);
 
-    if (gradient_value >= bayer_threshold) {
-        tex_color += vec4(cell_coord.x / mosaic_scale, cell_coord.y / mosaic_scale, 0.0, 0.0);
+        //    float gradient_value = v_texCoords.y;
+        float gradient_value = (1.0 - abs(u_time - 1.0)) * 2.0;
+
+        if (gradient_value >= bayer_threshold) {
+            //tex_color = vec4(cell_coord.x / mosaic_scale, cell_coord.y / mosaic_scale, 0.0, 0.0);
+            gl_FragColor = vec4(0.078, 0.078, 0.078, 1.0);
+        } else {
+            gl_FragColor = tex_color * v_color;
+        }
+    }else{
+        gl_FragColor = tex_color * v_color;
     }
 
-    gl_FragColor = tex_color * v_color;
 }

@@ -14,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -173,6 +174,18 @@ public class UI {
             }
         }
         Debug(" ! LEVELS: "+this.select_level_buttons.toString());
+    }
+    public void DrawIntro(){
+        ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
+        this.DrawTextCentered("presents",0,(milli_time%4000>2000)?-14:-13,1,16,null,true);
+        this.owner.batch.draw(manager.GetRegion("ui/logo/logo_aut"), -64, -16);
+        long delta = milli_time - this.owner.state.menu_animation_start_time;
+        float local_delta = delta / 8000.0f;
+        if(delta < 8000) {
+            this.DrawTextColoredCentered("Press any mouse button to continue", 0, (int) (-this.ui_size.y / 2 + 8 - (64 * (1 - local_delta))), 1, 16, null, new Color(0.15f,0.15f,0.15f,1.0f), true);
+        }else {
+            this.DrawTextColoredCentered("Press any mouse button to continue", 0, (int) (-this.ui_size.y / 2)+8, 1, 16, null, new Color(0.15f,0.15f,0.15f,1.0f), true);
+        }
     }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;

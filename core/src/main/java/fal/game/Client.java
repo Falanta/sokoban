@@ -64,17 +64,22 @@ public class Client {
         public int move_counter = -1;
         public long actual_time = 0;
         public long start_time = 0;
-        public long shader_anim_start_time = System.currentTimeMillis();
+        public long shader_anim_start_time = System.currentTimeMillis()-2000;
         public long menu_animation_start_time = 0;
         public boolean logo_anim_loaded = false;
-        public String menu = "main";
+        public String menu = "intro";
         public boolean level_running = false;
         public boolean map_loaded = false;
         public Vector2 cursor_pos = new Vector2();
-        public boolean music_mute = true;
-        public String music_name = "sounds/kros_loop_msc.ogg";
-        public String music_loop_name = "sounds/kros_loop_msc.ogg";
+        public boolean music_mute = false;
+        public String music_name = "sounds/fly_then_base_msc.ogg";
+        public String music_loop_name = "sounds/fly_then_base_msc.ogg";
+        public String music_details_name = "sounds/fly_then_details_msc.ogg";
+        public String music_details_loop_name = "sounds/fly_then_details_msc.ogg";
+        public float music_details_volume = 1.0f;
+        public float music_details_target_volume = music_details_volume;
         public float music_default_volume = 0.1f;
+        public ArrayList<DelayOperator> schedule = new ArrayList<DelayOperator>();
         public ClientState(){
         }
 
@@ -235,6 +240,29 @@ public class Client {
             this.camera.update();
         }
     }
+    public class DelayOperator{
+        public float timer = 0.0f;
+        public Runnable task = null;
+        public boolean active = false;
+        public DelayOperator(Runnable task,float delay){
+            this.timer = delay;
+            this.task = task;
+            this.active = true;
+        }
+        public boolean Update(float delta_time){
+            if(!active){return true;}
+            Main.Debug(this.timer+"");
+            this.timer -= delta_time;
+            if(this.timer <= 0.0f){
+                this.active = false;
+                Runnable buffer_task = this.task;
+                this.task = null;
+                buffer_task.run();
+                return true;
+            }
+            return false;
+        }
+    }
     private final String debug_prefix;
     public SpriteBatch batch;
     public static long milli_time = 0;
@@ -311,6 +339,12 @@ public class Client {
         }
         manager.GetMusic(this.state.music_name).play();
 
+        manager.GetMusic(this.state.music_details_loop_name).setLooping(true);
+        if(!this.state.music_details_name.equals(this.state.music_details_loop_name)) {
+            manager.GetMusic(this.state.music_details_name).setOnCompletionListener(music -> manager.GetMusic(this.state.music_details_loop_name).play());
+        }
+        manager.GetMusic(this.state.music_details_name).play();
+
         if(!this.state.music_mute) {
             this.UpdateMusicVolume(this.state.music_default_volume);
         }else{
@@ -319,9 +353,12 @@ public class Client {
 
         this.world = new World();
 
-        this.OpenMenu("main");
+        this.OpenMenu("intro");
 
         Debug("Done!");
+    }
+    public void ToSchedule(Runnable task, float delay){
+        this.state.schedule.add(new DelayOperator(task, delay));
     }
     public void LoadTiles(String path){
         Debug("- Loading tiles...");
@@ -375,6 +412,12 @@ public class Client {
     public void UpdateMusicVolume(float volume){
         manager.GetMusic(this.state.music_name).setVolume(volume);
         manager.GetMusic(this.state.music_loop_name).setVolume(volume);
+        this.UpdateMusicDetails();
+    }
+    public void UpdateMusicDetails(){
+        float volume = manager.GetMusic(this.state.music_loop_name).getVolume();
+        manager.GetMusic(this.state.music_details_name).setVolume(volume*this.state.music_details_volume);
+        manager.GetMusic(this.state.music_details_loop_name).setVolume(volume*this.state.music_details_volume);
     }
     public void Connect(CSConnection connection,String server_id){
         Debug(String.format("Joining: %s...",server_id));
@@ -575,6 +618,7 @@ public class Client {
         this.state.start_time = System.currentTimeMillis();
         this.state.actual_time = 0;
         this.state.level_running = true;
+        this.state.music_details_target_volume = 0.0f;
     }
     public void OpenMenu(String menu_id){
         this.state.logo_anim_loaded = false;
@@ -722,6 +766,11 @@ public class Client {
         this.batch.begin();
 //        this.main_interface.DrawDebugInformation();
         switch (this.state.menu) {
+            case "intro": {
+                this.main_interface.DrawIntro();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
             case "game": {
                 if (this.active_connection != null) {
                     this.main_interface.DrawLevelInformation();
@@ -846,6 +895,16 @@ public class Client {
         ((KeyboardControl)this.controller).UpdateMouse();
         UIButton mute_button = this.main_interface.buttons.get("global.mute");
         switch (this.state.menu) {
+            case "intro": {
+                if(this.controller.MouseInteraction()){
+                    this.state.shader_anim_start_time = System.currentTimeMillis();
+                    this.ToSchedule(()-> {
+                        OpenMenu("main");
+                        this.state.music_details_target_volume = 0.0f;
+                    },1.0f);
+                }
+                break;
+            }
             case "game": {
                 if (!this.state.chat_line_open) {
                     if (this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()) {
@@ -915,7 +974,8 @@ public class Client {
                     }
                     if (this.main_interface.buttons.get("game.next").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
-                        SendMessage("/next");
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
+                        this.ToSchedule(()->SendMessage("/next"),1.0f);
                     }
                     if (this.main_interface.buttons.get("game.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
@@ -952,6 +1012,7 @@ public class Client {
                     if (this.main_interface.buttons.get("main.settings").Read()){
                         manager.GetSound("sounds/settings_snd.ogg").stop();
                         manager.PlaySound("sounds/settings_snd.ogg",0.25f,1.0f,0.0f);
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
                         break;
                     }
                 }
@@ -1030,7 +1091,9 @@ public class Client {
                     for(UIButton button: this.main_interface.select_level_buttons){
                         if(button.Read()){
                             manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
-                            this.RunLevel(button.name);
+                            //this.RunLevel(button.name);
+                            this.state.shader_anim_start_time = System.currentTimeMillis();
+                            this.ToSchedule(()-> this.RunLevel(button.name),1.0f);
                         }
                     }
                 }
@@ -1041,11 +1104,15 @@ public class Client {
     public void LevelCleared(){
         this.state.level_running = false;
         manager.PlaySound("sounds/level_clear_snd.ogg",0.5f,1.0f,0.0f);
+        this.state.music_details_target_volume = 1.0f;
     }
     public void Tick(boolean render){
         //Debug("  - Tick");
         milli_time = System.currentTimeMillis();
         this.UpdateCursor();
+
+        this.state.schedule.removeIf(operator -> operator.Update(Gdx.graphics.getDeltaTime()));
+
         //Debug(milli_time+"");
         if(this.active_connection != null) {
             this.PullData();
@@ -1070,6 +1137,10 @@ public class Client {
             this.cam.Update();
             this.frame_buffer.begin();
 
+            this.state.music_details_volume += (this.state.music_details_target_volume - this.state.music_details_volume)*0.05f;
+            Debug(String.format("%.2f%n",this.state.music_details_volume));
+            this.UpdateMusicDetails();
+
             if(this.state.level_running || !this.state.menu.equals("game")) {
                 ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
             }else{
@@ -1087,7 +1158,7 @@ public class Client {
             this.RenderUI();
             this.frame_buffer.end();
 
-            ScreenUtils.clear(0.0f, 0.0f, 1.0f, 1f);
+            ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
 
             batch.setProjectionMatrix(main_interface.ui_viewport.getCamera().combined);
             batch.setShader(manager.GetShader("shaders/passthrough.frag"));
@@ -1095,8 +1166,7 @@ public class Client {
             batch.begin();
             // Передаем виртуальное разрешение буфера, а не размер окна!
             batch.getShader().setUniformf("u_resolution", 480f, 250f);
-            batch.getShader().setUniformf("u_time", (float) (milli_time-this.state.shader_anim_start_time));
-            Debug((float) (milli_time-this.state.shader_anim_start_time)+"");
+            batch.getShader().setUniformf("u_time", (float) (milli_time-this.state.shader_anim_start_time)/1000.0f);
 
             // Рисуем текстуру буфера на весь экран интерфейса
             batch.draw(this.frame_buffer.getColorBufferTexture(),

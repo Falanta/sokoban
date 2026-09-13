@@ -456,7 +456,7 @@ ui/logo/letter_a
   index: -1
 ui/logo/letter_b
   rotate: false
-  xy: 133, 77
+  xy: 131, 111
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
@@ -477,14 +477,14 @@ ui/logo/letter_n
   index: -1
 ui/logo/letter_o
   rotate: false
-  xy: 133, 67
+  xy: 131, 101
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
   index: -1
 ui/logo/letter_s
   rotate: false
-  xy: 143, 77
+  xy: 141, 111
   size: 8, 8
   orig: 8, 8
   offset: 0, 0
@@ -503,3 +503,10 @@ ui/logo/logo
   orig: 64, 64
   offset: 0, 0
   index: 2
+ui/logo/logo_aut
+  rotate: false
+  xy: 1, 87
+  size: 128, 32
+  orig: 128, 32
+  offset: 0, 0
+  index: -1
