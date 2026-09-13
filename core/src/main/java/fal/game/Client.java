@@ -55,10 +55,11 @@ public class Client {
     public class ClientState {
         public boolean chat_hide_interaction = false;
         public boolean chat_hide = true;
+        public boolean interacted = false;
         public boolean chat_interaction = false;
         public boolean chat_line_open = false;
         public String chat_line_buffer = "";
-        public String skin_texture = "player_flush";
+        public String skin_texture = "player_welp";
         public boolean player_step_memory = false;
         public ArrayList<String> available_skins = new ArrayList<String>();
         public int move_counter = -1;
@@ -294,7 +295,7 @@ public class Client {
         this.controller = controller;
         Gdx.input.setInputProcessor((InputProcessor) controller);
         this.cam = new Camera();
-        this.frame_buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 480, 250, false);
+        this.frame_buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 480*4, 250*4, false);
         this.frame_buffer.getColorBufferTexture().setFilter(
             com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest,
             com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest
@@ -771,6 +772,11 @@ public class Client {
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
+            case "meeting": {
+                this.main_interface.DrawMeeting();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
             case "game": {
                 if (this.active_connection != null) {
                     this.main_interface.DrawLevelInformation();
@@ -896,11 +902,12 @@ public class Client {
         UIButton mute_button = this.main_interface.buttons.get("global.mute");
         switch (this.state.menu) {
             case "intro": {
-                if(this.controller.MouseInteraction()){
+                if(this.controller.MouseInteraction() && !this.state.interacted){
+                    this.state.interacted = true;
                     this.state.shader_anim_start_time = System.currentTimeMillis();
                     this.ToSchedule(()-> {
-                        OpenMenu("main");
-                        this.state.music_details_target_volume = 0.0f;
+                        OpenMenu("meeting");
+                        this.state.interacted = false;
                     },1.0f);
                 }
                 break;
@@ -967,20 +974,25 @@ public class Client {
                         }
                     }
                 }
-                if(this.controller.MouseInteraction()) {
+                if(this.controller.MouseInteraction() && !this.state.interacted) {
                     if (this.main_interface.buttons.get("game.restart").Read()) {
                         manager.PlaySound("sounds/reload_snd.ogg",0.5f,1.0f,0.0f);
                         SendMessage("/set_map " + world.map.name);
                     }
                     if (this.main_interface.buttons.get("game.next").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
+                        this.state.interacted = true;
                         this.state.shader_anim_start_time = System.currentTimeMillis();
-                        this.ToSchedule(()->SendMessage("/next"),1.0f);
+                        this.ToSchedule(()-> {
+                            SendMessage("/next");
+                            this.state.interacted = false;
+                        },1.0f);
                     }
                     if (this.main_interface.buttons.get("game.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
                         SendMessage("/leave");
                         this.OpenMenu("main");
+                        this.state.music_details_target_volume = 0.0f;
                     }
                     if (mute_button.Read()) {
                         this.state.music_mute = !this.state.music_mute;
@@ -1014,6 +1026,52 @@ public class Client {
                         manager.PlaySound("sounds/settings_snd.ogg",0.25f,1.0f,0.0f);
                         this.state.shader_anim_start_time = System.currentTimeMillis();
                         break;
+                    }
+                }
+                break;
+            }
+            case "meeting":{
+                if(this.controller.MouseInteraction() && !this.state.interacted) {
+                    if (this.main_interface.buttons.get("meeting.done").Read()) {
+                        this.state.chat_line_open = false;
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(false);
+                        }
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
+                        this.state.interacted = true;
+                        this.ToSchedule(()-> {
+                            OpenMenu("main");
+                            this.state.music_details_target_volume = 0.0f;
+                            this.state.interacted = false;
+                        },1.0f);
+                        break;
+                    }
+                    if (this.main_interface.buttons.get("meeting.nickname").Read()){
+                        if(this.state.chat_line_open) {
+                            this.state.chat_line_open = false;
+                            if (this.controller instanceof KeyboardControl) {
+                                ((KeyboardControl) this.controller).setChatting(false);
+                            }
+                        }else {
+                            this.state.chat_line_open = true;
+                            if (this.controller instanceof KeyboardControl) {
+                                ((KeyboardControl) this.controller).setChatting(true);
+                            }
+                            ((KeyboardControl) this.controller).typedBuffer.setLength(0);
+                            ((KeyboardControl) this.controller).typedBuffer.append(this.id);
+                        }
+                        break;
+                    }
+                }
+                if(this.state.chat_line_open) {
+                    if (this.controller instanceof KeyboardControl) {
+                        this.id = ((KeyboardControl) this.controller).typedBuffer.toString();
+                    }
+                    if (this.controller.ChatInteraction()) {
+                        this.state.chat_line_open = false;
+                        if (this.controller instanceof KeyboardControl) {
+                            ((KeyboardControl) this.controller).setChatting(false);
+                        }
                     }
                 }
                 break;
@@ -1077,7 +1135,7 @@ public class Client {
                 break;
             }
             case "level_select":{
-                if(this.controller.MouseInteraction()) {
+                if(this.controller.MouseInteraction() && !this.state.interacted) {
                     if (this.main_interface.buttons.get("level_select.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg", 0.25f, 0.5f, 0.0f);
                         this.OpenMenu("main");
@@ -1091,9 +1149,12 @@ public class Client {
                     for(UIButton button: this.main_interface.select_level_buttons){
                         if(button.Read()){
                             manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
-                            //this.RunLevel(button.name);
+                            this.state.interacted = true;
                             this.state.shader_anim_start_time = System.currentTimeMillis();
-                            this.ToSchedule(()-> this.RunLevel(button.name),1.0f);
+                            this.ToSchedule(()-> {
+                                this.RunLevel(button.name);
+                                this.state.interacted = false;
+                            },1.0f);
                         }
                     }
                 }

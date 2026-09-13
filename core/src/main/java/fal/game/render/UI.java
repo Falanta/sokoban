@@ -148,6 +148,10 @@ public class UI {
         buttons.put("main.play",new UIButton("Play",new Vector2(this.ui_size.x/4-2,-14),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("main.customize",new UIButton("Customize",new Vector2(this.ui_size.x/4-2,-46),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("main.settings",new UIButton("Settings",new Vector2(this.ui_size.x/4-2,-78),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+        buttons.put("main.credits",new UIButton("Credits",new Vector2(this.ui_size.x/4-2,-110),new Vector2(this.ui_size.x/4-8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+
+        buttons.put("meeting.done",new UIButton("Done",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+        buttons.put("meeting.nickname",new UIButton("Nickname",new Vector2(-this.ui_size.x/4,-8),new Vector2(this.ui_size.x/2, 16),container_styles.get("text_input_01_s"),container_styles.get("text_input_01_h"),container_styles.get("text_input_01_p"),new Color(1,1,1,1),false));
 
         buttons.put("customize.back",new UIButton("Back",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
         buttons.put("customize.next",new UIButton("Next",new Vector2(this.ui_size.x/4,-8),new Vector2(16, 16),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
@@ -187,6 +191,29 @@ public class UI {
             this.DrawTextColoredCentered("Press any mouse button to continue", 0, (int) (-this.ui_size.y / 2)+8, 1, 16, null, new Color(0.15f,0.15f,0.15f,1.0f), true);
         }
     }
+    public void DrawMeeting(){
+        ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
+        long delta = milli_time - this.owner.state.menu_animation_start_time - 2000;
+        float local_delta = Math.max(0.0f,delta / 3000.0f);
+        if(delta < 3000) {
+            this.DrawText("Hello, my name is:".substring(0,(int)(local_delta*18)),-64,(int) this.ui_size.y/4,2,16,null,true);
+        }else {
+            this.DrawText("Hello, my name is:",-64,(int) this.ui_size.y/4,2,16,null,true);
+            this.buttons.get("meeting.done").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+            this.DrawTextCentered("Done",0,(int) -this.ui_size.y/2+25,2,16,null,true);
+
+            this.buttons.get("meeting.nickname").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+            if(this.owner.state.chat_line_open){
+                String nickname_text = this.owner.id;
+                if(milli_time%1000>500){
+                    nickname_text = String.format("<%s>",this.owner.id);
+                }
+                this.DrawTextColoredCentered(nickname_text, 0, 0, 2, 16, null, new Color(0.91f,0.96f,0.44f,1.0f), true);
+            }else {
+                this.DrawTextCentered(this.owner.id, 0, 0, 2, 16, null, true);
+            }
+        }
+    }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;
         if(delta != 1) {
@@ -221,7 +248,7 @@ public class UI {
         this.DrawTextBuilder(this.chat_line_builder,(int) -this.ui_size.x/2+1,(int) -this.ui_size.y/2+11,1.0f,9,"fonts/consolas.ttf",this.text_shadow);
     }
     public void DrawMainMenu(){
-        List<String> button_names = Arrays.asList("main.play", "main.customize", "main.settings");
+        List<String> button_names = Arrays.asList("main.play", "main.customize", "main.settings", "main.credits");
         if(!this.owner.state.logo_anim_loaded){
             long delta = milli_time - this.owner.state.menu_animation_start_time;
             float local_delta = delta / 1000.0f;
@@ -229,7 +256,7 @@ public class UI {
                 this.DrawLogoAnim(1,(int) -this.ui_size.x / 4, (int) (this.ui_size.y / 4 + (100 * (1 - local_delta))));
 //                this.DrawLogoAnim(local_delta, (int) -this.ui_size.x / 4, (int) this.ui_size.y / 4);
                 //this.DrawTextCentered("SOKOBAN", (int) -this.ui_size.x / 4, (int) (this.ui_size.y / 4 + (100 * (1 - local_delta))), 4, 8, null, true);
-                for (int y = 0; y < 3; y++) {
+                for (int y = 0; y < 4; y++) {
                     int anim_delay = Math.max(0, (int) (300 * (1 - ((delta + y * 300) / 1000.0f))));
                     container_styles.get("button_01_s").Draw(this.owner.batch, (int) (this.ui_size.x / 4 - 2 + anim_delay), -y * 32 - 14, new Vector2(this.ui_size.x / 4 - 8, 16), new Color(1, 1, 1, 1), 2, true);
                     this.DrawText(this.buttons.get(button_names.get(y)).name, (int) (this.ui_size.x / 4 + anim_delay), -y * 32, 2, 16, null, true);
@@ -241,10 +268,10 @@ public class UI {
         } else{
             this.DrawLogoAnim(1,(int) -this.ui_size.x / 4, (int) this.ui_size.y / 4);
             //this.DrawTextCentered("SOKOBAN", (int) -this.ui_size.x / 4, (int) (this.ui_size.y / 4), 4, 8, null, true);
-            for(int y = 0;y<3;y++) {
+            for(int y = 0;y<4;y++) {
                 this.buttons.get(button_names.get(y)).Draw(this.owner.batch,2,this.owner.state.cursor_pos);
             }
-            this.DrawText("Play\nCustomize\nSettings",(int) this.ui_size.x/4,0,2,16,null,true);
+            this.DrawText("Play\nCustomize\nSettings\nCredits",(int) this.ui_size.x/4,0,2,16,null,true);
         }
     }
     public void DrawSelectLevel(){
