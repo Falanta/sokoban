@@ -255,7 +255,6 @@ public class Client {
         }
         public boolean Update(float delta_time){
             if(!active){return true;}
-            Main.Debug(this.timer+"");
             this.timer -= delta_time;
             if(this.timer <= 0.0f){
                 this.active = false;
@@ -1259,7 +1258,6 @@ public class Client {
             this.frame_buffer.begin();
 
             this.state.music_details_volume += (this.state.music_details_target_volume - this.state.music_details_volume)*0.05f;
-            Debug(String.format("%.2f%n",this.state.music_details_volume));
             this.UpdateMusicDetails();
 
             if(this.state.level_running || !this.state.menu.equals("game")) {

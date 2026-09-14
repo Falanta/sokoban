@@ -134,3 +134,54 @@ startScripts.classpath = project.tasks.jar.outputs.files
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
 }
+
+task createRelease(dependsOn: ['dist']) {
+  group = "Distribution"
+  description = "Builds jar, copies assets and jar to release/<version>/"
+
+  doLast {
+    // Надежно получаем версию из корневого проекта
+    def gameVersion = rootProject.hasProperty("projectVersion") ? rootProject.projectVersion : "1.0.0"
+
+    // Путь к папке релиза с правильной подстановкой переменной
+    String targetDir = "${rootProject.projectDir}/release/${gameVersion}"
+    File releaseFolder = file(targetDir)
+    File assetsReleaseFolder = new File(releaseFolder, "assets")
+
+    println "=== Начинаем сборку релиза версии ${gameVersion} ==="
+
+    // 1. Создаем структуру папок
+    releaseFolder.mkdirs()
+    assetsReleaseFolder.mkdirs()
+
+    // 2. Ищем и копируем папку assets внутрь release/<version>/assets/
+    File sourceAssets = file("${rootProject.projectDir}/assets")
+    if (!sourceAssets.exists()) {
+      sourceAssets = file("${rootProject.projectDir}/assets")
+    }
+
+    if (sourceAssets.exists()) {
+      println "Копирование ассетов в ${assetsReleaseFolder}..."
+      copy {
+        from sourceAssets
+        into assetsReleaseFolder
+      }
+    } else {
+      println "Внимание: папка assets не найдена!"
+    }
+
+    // 3. Копируем собранный jar ИМЕННО в корневую папку релиза (release/<version>/),
+    // а НЕ внутрь папки assets!
+    File sourceJarDir = file("build/libs")
+    println "Копирование JAR-файла в ${releaseFolder}..."
+    copy {
+      from sourceJarDir
+      include "*.jar"
+      exclude "*-sources.jar", "*-javadoc.jar"
+      into "${releaseFolder}/assets" // <-- Копируется прямо в папку релиза, рядом с папкой assets
+    }
+
+    println "=== Релиз версии ${gameVersion} успешно собран! ==="
+    println "Путь: ${releaseFolder.absolutePath}"
+  }
+}

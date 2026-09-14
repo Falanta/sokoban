@@ -103,6 +103,40 @@ entities/player_why_cry
   index: -1
 
 main_atlas3.png
+size: 256, 256
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+icon/icon
+  rotate: false
+  xy: 1, 85
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 128
+icon/icon
+  rotate: false
+  xy: 1, 19
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 64
+icon/icon
+  rotate: false
+  xy: 131, 181
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: 32
+icon/icon
+  rotate: false
+  xy: 1, 1
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 16
+
+main_atlas4.png
 size: 64, 16
 format: RGBA8888
 filter: Nearest, Nearest
@@ -206,7 +240,7 @@ styles/text_input_01_s
   offset: 0, 0
   index: -1
 
-main_atlas4.png
+main_atlas5.png
 size: 512, 16
 format: RGBA8888
 filter: Nearest, Nearest
@@ -401,7 +435,7 @@ tiles/wooden_wall
   offset: 0, 0
   index: -1
 
-main_atlas5.png
+main_atlas6.png
 size: 64, 16
 format: RGBA8888
 filter: Nearest, Nearest
@@ -442,7 +476,7 @@ ui/note
   offset: 0, 0
   index: -1
 
-main_atlas6.png
+main_atlas7.png
 size: 256, 128
 format: RGBA8888
 filter: Nearest, Nearest
