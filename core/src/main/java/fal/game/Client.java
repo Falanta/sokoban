@@ -73,16 +73,16 @@ public class Client {
         public boolean map_loaded = false;
         public Vector2 cursor_pos = new Vector2();
         public boolean music_mute = false;
-        public String music_name = "sounds/fly_then_base_msc.ogg";
-        public String music_loop_name = "sounds/fly_then_base_msc.ogg";
-        public String music_details_name = "sounds/fly_then_details_msc.ogg";
-        public String music_details_loop_name = "sounds/fly_then_details_msc.ogg";
+        public final String music_name = "sounds/fly_then_base_msc.ogg";
+        public final String music_loop_name = "sounds/fly_then_base_msc.ogg";
+        public final String music_details_name = "sounds/fly_then_details_msc.ogg";
+        public final String music_details_loop_name = "sounds/fly_then_details_msc.ogg";
+        public final String credits_music_name = "sounds/titles_msc.ogg";
         public float music_details_volume = 1.0f;
         public float music_details_target_volume = music_details_volume;
-        public float music_default_volume = 0.1f;
+        public final float music_default_volume = 0.1f;
         public ArrayList<DelayOperator> schedule = new ArrayList<DelayOperator>();
-        public ClientState(){
-        }
+        public ClientState(){}
 
     }
     public static class ResourceManager {
@@ -103,9 +103,12 @@ public class Client {
             fontParams.fontFileName = path;
             fontParams.fontParameters.size = size;
             fontParams.fontParameters.genMipMaps = false;
+            fontParams.fontParameters.mono = true; // Отключает сглаживание ( grayscale ), убирая размазанность при Nearest
+            fontParams.fontParameters.padBottom = 2;    // Увеличивает отступ между глифами в атласе (по умолчанию часто равен 0 или 1)
+            fontParams.fontParameters.padRight = 2;
             fontParams.fontParameters.minFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
             fontParams.fontParameters.magFilter = com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest;
-            fontParams.fontParameters.characters = "1234567890_.,:;-+()[]{}<>/\\!?%~*ABCDEFGHIJKLMNO '\"`=&@$#^PQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяЂђЈјЉљЊњЋћЏџҐґЄєІіЇїЎў";;
+            fontParams.fontParameters.characters = "1234567890_.,:;-+()[]{}<>/\\!?%~*ABCDEFGHIJKLMNO '\"`=&@$#^PQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяЂђЈјЉљЊњЋћЏџҐґЄєІіЇїЎў♥";
             assetManager.load(path, BitmapFont.class, fontParams);
         }
         public void ParseShaders(String folderPath) {
@@ -351,6 +354,8 @@ public class Client {
         }else{
             this.UpdateMusicVolume(0.0f);
         }
+        manager.GetMusic(this.state.credits_music_name).setVolume(0.2f);
+        manager.GetMusic(this.state.credits_music_name).setOnCompletionListener(music -> this.EndCredits());
 
         this.world = new World();
 
@@ -396,19 +401,29 @@ public class Client {
     }
     public void LoadLevels(String path){
         Debug(String.format("Loading levels in %s...",path));
-        FileHandle dir = Gdx.files.internal(path);
-
-        if (!dir.exists() || !dir.isDirectory()) {
-            Debug(String.format(" - There is no assets/%s folder",path));
+        // Automatic loading:
+//        FileHandle dir = Gdx.files.internal(path);
+//
+//        if (!dir.exists() || !dir.isDirectory()) {
+//            Debug(String.format(" - There is no assets/%s folder",path));
+//            return;
+//        }
+//        for (FileHandle file : dir.list()) {
+//            Debug(String.format(" - %s...",file.name()));
+//            if (!file.isDirectory() && file.extension().equals("map")) {
+//                String file_name = file.nameWithoutExtension();
+//                this.levels_list.add(file_name);
+//            }
+//        }
+        // Company loading:
+        path += "/scenario.cmp";
+        FileHandle company = Gdx.files.internal(path);
+        if (!company.exists()) {
+            Debug(String.format(" - There is no scenario: %s",path));
             return;
         }
-        for (FileHandle file : dir.list()) {
-            Debug(String.format(" - %s...",file.name()));
-            if (!file.isDirectory() && file.extension().equals("map")) {
-                String file_name = file.nameWithoutExtension();
-                this.levels_list.add(file_name);
-            }
-        }
+        String[] levels = company.readString().split("\\R");
+        this.levels_list.addAll(Arrays.asList(levels));
     }
     public void UpdateMusicVolume(float volume){
         manager.GetMusic(this.state.music_name).setVolume(volume);
@@ -811,6 +826,11 @@ public class Client {
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
+            case "credits": {
+                this.main_interface.DrawCredits();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
         }
         this.batch.end();
     }
@@ -895,6 +915,16 @@ public class Client {
         ConnectMe(this);
         SendMessage("/set_map "+level_name);
         this.OpenMenu("game");
+    }
+    public void EndCredits(){
+        this.state.interacted = true;
+        this.state.shader_anim_start_time = System.currentTimeMillis();
+        this.ToSchedule(()-> {
+            this.UpdateMusicVolume(this.state.music_mute?0.0f:this.state.music_default_volume);
+            this.OpenMenu("main");
+            manager.GetMusic(this.state.credits_music_name).stop();
+            this.state.interacted = false;
+        },1.0f);
     }
     public void Control(){
         if(this.controller == null) {return;}
@@ -981,10 +1011,16 @@ public class Client {
                     }
                     if (this.main_interface.buttons.get("game.next").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
+                        if(this.world.map.name.equals(this.levels_list.get(this.levels_list.size()-1))){
+                            manager.PlaySound("sounds/win_snd.ogg",0.5f,1.0f,0.0f);
+                        }
                         this.state.interacted = true;
                         this.state.shader_anim_start_time = System.currentTimeMillis();
                         this.ToSchedule(()-> {
-                            SendMessage("/next");
+//                            SendMessage("/next");
+                            int actual = this.levels_list.indexOf(this.world.map.name);
+                            SendMessage("/set_map " + this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
+
                             this.state.interacted = false;
                         },1.0f);
                     }
@@ -1025,6 +1061,17 @@ public class Client {
                         manager.GetSound("sounds/settings_snd.ogg").stop();
                         manager.PlaySound("sounds/settings_snd.ogg",0.25f,1.0f,0.0f);
                         this.state.shader_anim_start_time = System.currentTimeMillis();
+                        break;
+                    }
+                    if (this.main_interface.buttons.get("main.credits").Read()){
+                        this.state.interacted = true;
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
+                        this.ToSchedule(()-> {
+                            OpenMenu("credits");
+                            this.state.interacted = false;
+                            this.UpdateMusicVolume(0.0f);
+                            manager.GetMusic(this.state.credits_music_name).play();
+                        },1.0f);
                         break;
                     }
                 }
@@ -1157,6 +1204,19 @@ public class Client {
                             },1.0f);
                         }
                     }
+                }
+                break;
+            }
+            case "credits":{
+                if(this.controller.MouseInteraction() && !this.state.interacted) {
+                    if (this.main_interface.buttons.get("credits.back").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg", 0.25f, 0.5f, 0.0f);
+                        this.EndCredits();
+                        break;
+                    }
+                }
+                if(this.controller.Skip()){
+                    this.state.menu_animation_start_time -= 100;
                 }
                 break;
             }

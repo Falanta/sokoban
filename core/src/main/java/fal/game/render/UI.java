@@ -46,6 +46,29 @@ public class UI {
     private boolean text_shadow = true;
     public Map<String,UIButton> buttons = new HashMap<String,UIButton>();
     public ArrayList<UIButton> select_level_buttons = new ArrayList<UIButton>();
+    private final String credits = "  Sokoban\n" +
+        "Powered by LibGDX\n" +
+        "Original idea by Hiroyuki Imabayashi\n" +
+        "Adaptation by Falanta Fantomo\n" +
+        "Textures:\n" +
+        "  Falanta Fantomo\n" +
+        "Music:\n" +
+        "  Знаки Препинания - \"Летим же\" (edited)\n" +
+        "  2M3V & Suno - \"Пенис пенис пенис пенис\"\nMoral support:\n" +
+        "  SuperSmile123\n" +
+        "  bth123\n" +
+        "  JustJabka\n" +
+        "  Hightechik\n" +
+        "  Makahiro\n" +
+        "  DasDiamond58\n" +
+        "  Marshmachell\n" +
+        "  2M3V\n" +
+        "  Макар\n" +
+        "  ryamu\n" +
+        "  k.kust4\n" +
+        "  execute1608\n" +
+        "  Zeinoxl\n" +
+        "  ...and other drugs from Anthill ♥♥♥♥";
     public void DrawText(String text, int pos_x, int pos_y, float size, int height, String font_name, boolean shadow){
         font_name = (font_name == null)?"fonts/small_sokoban.ttf":font_name;
         BitmapFont font = manager.assetManager.get(font_name,BitmapFont.class);
@@ -163,6 +186,8 @@ public class UI {
         buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-92,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
 
         buttons.put("level_select.back",new UIButton("Back",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+
+        buttons.put("credits.back",new UIButton("Back",new Vector2(this.ui_size.x/2 - this.ui_size.x/8-16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
     }
     public void GenerateLevelSelectButtons(){
         int y = 0;
@@ -213,6 +238,13 @@ public class UI {
                 this.DrawTextCentered(this.owner.id, 0, 0, 2, 16, null, true);
             }
         }
+    }
+    public void DrawCredits(){
+        ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
+        long delta = milli_time - this.owner.state.menu_animation_start_time;
+        this.buttons.get("credits.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.DrawTextCentered("Back",(int)(this.ui_size.x/2 - this.ui_size.x/16-16),(int) -this.ui_size.y/2+25,2,16,null,true);
+        this.DrawText(this.credits,(int)(-this.ui_size.x/2 + 16),(int) (-this.ui_size.y / 2 + delta/100.0f),2,12,null,true);
     }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;

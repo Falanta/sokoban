@@ -17,4 +17,5 @@ public interface PlayerController {
     boolean ChatInteraction();
     boolean ChatHideInteraction();
     boolean MouseInteraction();
+    boolean Skip();
 }

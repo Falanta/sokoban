@@ -15,7 +15,8 @@
 		"эюя",
 		"ЂђЈјЉљЊњЋћЏџ",
 		"ҐґЄєІіЇї",
-		"Ўў"
+		"Ўў",
+		"♥"
 	],
 	"glyph-color": "white",
 	"glyph-width": 8,
@@ -53,8 +54,8 @@
 	"font-width-class": "5",
 	"font-creation-date": "2026-08-29",
 	"font-creation-time": "15:29",
-	"font-modification-date": "2026-08-29",
-	"font-modification-time": "18:53",
+	"font-modification-date": "2026-09-13",
+	"font-modification-time": "23:11",
 	"font-modification-auto": true,
 	"overrides": [
 		"# hide the pixels of the \"space\" characters!",

@@ -50,4 +50,5 @@ public class KeyboardControl extends InputAdapter implements PlayerController {
     @Override public boolean ChatInteraction() { return Gdx.input.isKeyJustPressed(Input.Keys.ENTER); }
     @Override public boolean ChatHideInteraction() { return Gdx.input.isKeyJustPressed(Input.Keys.H); }
     @Override public boolean MouseInteraction() { return this.mouse_interact; }
+    @Override public boolean Skip() { return Gdx.input.isKeyPressed(Input.Keys.SPACE); }
 }
