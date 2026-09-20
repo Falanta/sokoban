@@ -28,6 +28,7 @@ import java.util.Map;
 
 import fal.game.Client;
 import fal.game.Main;
+import fal.game.Render;
 import fal.game.network.Message;
 import fal.game.world.Body;
 import fal.game.world.LevelMap;
@@ -37,6 +38,7 @@ public class UI {
     public Viewport ui_viewport;
     public Vector2 ui_size = new Vector2(480.0f,250.0f);
     private final Client owner;
+    public Render render;
     private final StringBuilder debug_info_builder = new StringBuilder();
     private final StringBuilder level_info_builder = new StringBuilder();
     private final StringBuilder chat_builder = new StringBuilder();
@@ -76,10 +78,10 @@ public class UI {
         font.getData().setLineHeight(height);
         if(shadow){
             font.setColor(0,0,0,0.3f);
-            font.draw(this.owner.batch,text,pos_x+size,pos_y-size);
+            font.draw(this.render.batch,text,pos_x+size,pos_y-size);
             font.setColor(1,1,1,1);
         }
-        font.draw(this.owner.batch,text,pos_x,pos_y);
+        font.draw(this.render.batch,text,pos_x,pos_y);
         font.getData().setScale(1.0f);
     }
     public void DrawTextColoredCentered(String text, int pos_x, int pos_y, float size, int height, String font_name,Color color,boolean shadow){
@@ -90,13 +92,13 @@ public class UI {
         glyphLayout.setText(font, text);
         if(shadow){
             font.setColor(0,0,0,0.3f);
-            font.draw(this.owner.batch,text,pos_x+size-(glyphLayout.width/2),pos_y-size+(glyphLayout.height/2));
+            font.draw(this.render.batch,text,pos_x+size-(glyphLayout.width/2),pos_y-size+(glyphLayout.height/2));
             font.setColor(1,1,1,1);
         }
         if(color != null) {
             font.setColor(color);
         }
-        font.draw(this.owner.batch,text,pos_x-(glyphLayout.width/2),pos_y+(glyphLayout.height/2));
+        font.draw(this.render.batch,text,pos_x-(glyphLayout.width/2),pos_y+(glyphLayout.height/2));
         font.setColor(1,1,1,1);
         font.getData().setScale(1.0f);
     }
@@ -110,10 +112,10 @@ public class UI {
         font.getData().setLineHeight(height);
         if(shadow){
             font.setColor(0,0,0,0.3f);
-            font.draw(this.owner.batch,text,pos_x+size,pos_y-size);
+            font.draw(this.render.batch,text,pos_x+size,pos_y-size);
             font.setColor(1,1,1,1);
         }
-        font.draw(this.owner.batch,text,pos_x,pos_y);
+        font.draw(this.render.batch,text,pos_x,pos_y);
         font.getData().setScale(1.0f);
     }
     public String FormatTime(long time){
@@ -150,6 +152,7 @@ public class UI {
     }
     public UI(Client owner){
         this.owner = owner;
+        this.render = this.owner.render;
 
         this.ui_viewport = new FitViewport(ui_size.x,ui_size.y,new OrthographicCamera());
         this.ui_viewport.apply();
@@ -207,7 +210,7 @@ public class UI {
     public void DrawIntro(){
         ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
         this.DrawTextCentered("presents",0,(milli_time%4000>2000)?-14:-13,1,16,null,true);
-        this.owner.batch.draw(manager.GetRegion("ui/logo/logo_aut"), -64, -16);
+        this.render.batch.draw(manager.GetRegion("ui/logo/logo_aut"), -64, -16);
         long delta = milli_time - this.owner.state.menu_animation_start_time;
         float local_delta = delta / 8000.0f;
         if(delta < 8000) {
@@ -224,10 +227,10 @@ public class UI {
             this.DrawText("Hello, my name is:".substring(0,(int)(local_delta*18)),-64,(int) this.ui_size.y/4,2,16,null,true);
         }else {
             this.DrawText("Hello, my name is:",-64,(int) this.ui_size.y/4,2,16,null,true);
-            this.buttons.get("meeting.done").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+            this.buttons.get("meeting.done").Draw(this.render.batch,2,this.owner.state.cursor_pos);
             this.DrawTextCentered("Done",0,(int) -this.ui_size.y/2+25,2,16,null,true);
 
-            this.buttons.get("meeting.nickname").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+            this.buttons.get("meeting.nickname").Draw(this.render.batch,2,this.owner.state.cursor_pos);
             if(this.owner.state.chat_line_open){
                 String nickname_text = this.owner.id;
                 if(milli_time%1000>500){
@@ -242,36 +245,36 @@ public class UI {
     public void DrawCredits(){
         ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
         long delta = milli_time - this.owner.state.menu_animation_start_time;
-        this.buttons.get("credits.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("credits.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         this.DrawTextCentered("Back",(int)(this.ui_size.x/2 - this.ui_size.x/16-16),(int) -this.ui_size.y/2+25,2,16,null,true);
         this.DrawText(this.credits,(int)(-this.ui_size.x/2 + 16),(int) (-this.ui_size.y / 2 + delta/100.0f),2,12,null,true);
     }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;
         if(delta != 1) {
-            this.owner.batch.draw(manager.GetRegion("tiles/crate_02_d"), x - 18, y - 18, 36, 36);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_s"), x - 90 - (int)(back_delta*8)*24, y - 12, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_o"), x - 66, y - 12 + (int)(back_delta*8)*24, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_k"), x - 42, y - 12 - (int)(back_delta*8)*24, 24, 24);
+            this.render.batch.draw(manager.GetRegion("tiles/crate_02_d"), x - 18, y - 18, 36, 36);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_s"), x - 90 - (int)(back_delta*8)*24, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_o"), x - 66, y - 12 + (int)(back_delta*8)*24, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_k"), x - 42, y - 12 - (int)(back_delta*8)*24, 24, 24);
 
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_b"), x + 21, y - 12 + (int)(back_delta*8)*24, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_a"), x + 45, y - 12 - (int)(back_delta*8)*24, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_n"), x + 69 + (int)(back_delta*8)*24, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_b"), x + 21, y - 12 + (int)(back_delta*8)*24, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_a"), x + 45, y - 12 - (int)(back_delta*8)*24, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_n"), x + 69 + (int)(back_delta*8)*24, y - 12, 24, 24);
         }else{
-            this.owner.batch.draw(manager.GetRegion("tiles/crate_02_e"), x - 18, y - 18, 36, 36);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_s"), x - 90, y - 12, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_o"), x - 66, y - 12, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_k"), x - 42, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("tiles/crate_02_e"), x - 18, y - 18, 36, 36);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_s"), x - 90, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_o"), x - 66, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_k"), x - 42, y - 12, 24, 24);
 
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_b"), x + 21, y - 12, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_a"), x + 45, y - 12, 24, 24);
-            this.owner.batch.draw(manager.GetRegion("ui/logo/letter_n"), x + 69, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_b"), x + 21, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_a"), x + 45, y - 12, 24, 24);
+            this.render.batch.draw(manager.GetRegion("ui/logo/letter_n"), x + 69, y - 12, 24, 24);
         }
     }
     public void DrawChatLine(String text){
-        this.owner.batch.setColor(0, 0, 0, 0.3f);
-        this.owner.batch.draw(manager.GetRegion("pixel_black"),-this.ui_size.x/2+1,-this.ui_size.y/2+1,this.ui_size.x-2,11);
-        this.owner.batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        this.render.batch.setColor(0, 0, 0, 0.3f);
+        this.render.batch.draw(manager.GetRegion("pixel_black"),-this.ui_size.x/2+1,-this.ui_size.y/2+1,this.ui_size.x-2,11);
+        this.render.batch.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         this.chat_line_builder.setLength(0);
         this.chat_line_builder.append(text);
         if(milli_time%1000>500){
@@ -290,7 +293,7 @@ public class UI {
                 //this.DrawTextCentered("SOKOBAN", (int) -this.ui_size.x / 4, (int) (this.ui_size.y / 4 + (100 * (1 - local_delta))), 4, 8, null, true);
                 for (int y = 0; y < 4; y++) {
                     int anim_delay = Math.max(0, (int) (300 * (1 - ((delta + y * 300) / 1000.0f))));
-                    container_styles.get("button_01_s").Draw(this.owner.batch, (int) (this.ui_size.x / 4 - 2 + anim_delay), -y * 32 - 14, new Vector2(this.ui_size.x / 4 - 8, 16), new Color(1, 1, 1, 1), 2, true);
+                    container_styles.get("button_01_s").Draw(this.render.batch, (int) (this.ui_size.x / 4 - 2 + anim_delay), -y * 32 - 14, new Vector2(this.ui_size.x / 4 - 8, 16), new Color(1, 1, 1, 1), 2, true);
                     this.DrawText(this.buttons.get(button_names.get(y)).name, (int) (this.ui_size.x / 4 + anim_delay), -y * 32, 2, 16, null, true);
                 }
             }else{
@@ -301,7 +304,7 @@ public class UI {
             this.DrawLogoAnim(1,(int) -this.ui_size.x / 4, (int) this.ui_size.y / 4);
             //this.DrawTextCentered("SOKOBAN", (int) -this.ui_size.x / 4, (int) (this.ui_size.y / 4), 4, 8, null, true);
             for(int y = 0;y<4;y++) {
-                this.buttons.get(button_names.get(y)).Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+                this.buttons.get(button_names.get(y)).Draw(this.render.batch,2,this.owner.state.cursor_pos);
             }
             this.DrawText("Play\nCustomize\nSettings\nCredits",(int) this.ui_size.x/4,0,2,16,null,true);
         }
@@ -309,24 +312,24 @@ public class UI {
     public void DrawSelectLevel(){
 //        StringBuilder levels_list = new StringBuilder();
         for(UIButton button: this.select_level_buttons){
-            button.Draw(this.owner.batch,1,this.owner.state.cursor_pos);
+            button.Draw(this.render.batch,1,this.owner.state.cursor_pos);
 //            levels_list.append(button.name).append("\n");
             DrawText(button.name,(int) button.pos.x+1,(int) button.pos.y+7,1,8,null,true);
         }
 //        DrawTextBuilder(levels_list,(int) -this.ui_size.x/2+10,(int) this.ui_size.y/2-9,1,16,null,true);
 
-        this.buttons.get("level_select.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("level_select.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         this.DrawTextCentered("Back",0,(int) -this.ui_size.y/2+25,2,16,null,true);
     }
     public void DrawCustomizeMenu(){
-        this.buttons.get("customize.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.buttons.get("customize.next").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.owner.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x/4,-8,16,16);
-        this.buttons.get("customize.prev").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.owner.batch.draw(manager.GetRegion("ui/arrow_left"), -this.ui_size.x/4-16,-8,16,16);
+        this.buttons.get("customize.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("customize.next").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.render.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x/4,-8,16,16);
+        this.buttons.get("customize.prev").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.render.batch.draw(manager.GetRegion("ui/arrow_left"), -this.ui_size.x/4-16,-8,16,16);
         this.DrawTextCentered("Back",0,(int) -this.ui_size.y/2+25,2,16,null,true);
 
-        this.buttons.get("customize.nickname").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("customize.nickname").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         if(this.owner.state.chat_line_open){
             String nickname_text = this.owner.id;
             if(milli_time%1000>500){
@@ -337,24 +340,24 @@ public class UI {
             this.DrawTextCentered(this.owner.id, 0, (int) -this.ui_size.y / 2 + 57, 2, 16, null, true);
         }
 
-        this.owner.batch.draw(manager.GetRegion("entities/"+this.owner.state.skin_texture), -30, -30, 60, 60);
+        this.render.batch.draw(manager.GetRegion("entities/"+this.owner.state.skin_texture), -30, -30, 60, 60);
         String formatted_skin = this.owner.state.skin_texture.replace("player_", "").replace("_", " ").substring(0, 1).toUpperCase() + this.owner.state.skin_texture.replace("player_", "").replace("_", " ").substring(1);
         this.DrawTextCentered(formatted_skin,0,(int) this.ui_size.y/4,2,16,null,true);
     }
     public void DrawGameOverlay(){
-        this.buttons.get("game.back").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.buttons.get("game.restart").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
-        this.owner.batch.draw(manager.GetRegion("ui/home"), this.ui_size.x/2-46,this.ui_size.y/2-22,16,16);
-        this.owner.batch.draw(manager.GetRegion("ui/arrow_reload"), this.ui_size.x/2-70,this.ui_size.y/2-22,16,16);
+        this.buttons.get("game.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("game.restart").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.render.batch.draw(manager.GetRegion("ui/home"), this.ui_size.x/2-46,this.ui_size.y/2-22,16,16);
+        this.render.batch.draw(manager.GetRegion("ui/arrow_reload"), this.ui_size.x/2-70,this.ui_size.y/2-22,16,16);
         if(!this.owner.state.level_running) {
-            this.buttons.get("game.next").Draw(this.owner.batch, 2, this.owner.state.cursor_pos);
-            this.owner.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x / 2 - 94, this.ui_size.y / 2 - 22, 16, 16);
+            this.buttons.get("game.next").Draw(this.render.batch, 2, this.owner.state.cursor_pos);
+            this.render.batch.draw(manager.GetRegion("ui/arrow_right"), this.ui_size.x / 2 - 94, this.ui_size.y / 2 - 22, 16, 16);
         }
     }
     public void DrawMuteButton(){
-        this.buttons.get("global.mute").Draw(this.owner.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("global.mute").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         if(!this.owner.state.music_mute) {
-            this.owner.batch.draw(manager.GetRegion("ui/note"), this.ui_size.x / 2 - 22, this.ui_size.y / 2 - 22, 16, 16);
+            this.render.batch.draw(manager.GetRegion("ui/note"), this.ui_size.x / 2 - 22, this.ui_size.y / 2 - 22, 16, 16);
         }
     }
     public void DrawLevelInformation(){

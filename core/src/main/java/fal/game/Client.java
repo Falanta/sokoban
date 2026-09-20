@@ -223,7 +223,7 @@ public class Client {
             assetManager.dispose();
         }
     }
-    public class Camera{
+    public static class Camera{
         public Vector2 pos = new Vector2(0,0);
         public Vector2 target_pos = new Vector2(0,0);
         public float zoom = 2.0f;
@@ -267,7 +267,8 @@ public class Client {
         }
     }
     private final String debug_prefix;
-    public SpriteBatch batch;
+    public ClientState state = new ClientState();
+    public final Render render = new Render(this);
     public static long milli_time = 0;
     public static ResourceManager manager;
     public CSConnection active_connection;
@@ -278,15 +279,11 @@ public class Client {
     public ArrayList<String> waiting_orders = new ArrayList<String>();
     public ArrayList<Message> chat = new ArrayList<Message>();
     public World world;
-    public Camera cam;
     public UI main_interface;
     public Map<String,Tile> tiles_pallete;
     public ArrayList<String> levels_list = new ArrayList<String>();
     public static final Vector2 tiles_size = new Vector2(12,12);
     public PlayerController controller;
-    public FrameBuffer frame_buffer;
-    public ClientState state = new ClientState();
-//    private Map<String,Object> control_memory = new HashMap<>();
     private void Debug(String text){
         Main.Debug(this.debug_prefix+text);
     }
@@ -296,19 +293,12 @@ public class Client {
 
         this.controller = controller;
         Gdx.input.setInputProcessor((InputProcessor) controller);
-        this.cam = new Camera();
-        this.frame_buffer = new FrameBuffer(Pixmap.Format.RGBA8888, 480*4, 250*4, false);
-        this.frame_buffer.getColorBufferTexture().setFilter(
-            com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest,
-            com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest
-        );
 
         this.id = id;
         this.active_connection = null;
 
         this.last_tps = -1;
         this.last_data = new HashMap();
-        batch = new SpriteBatch();
 
         TexturePacker.Settings settings = new TexturePacker.Settings();
         settings.paddingX = 2;
@@ -323,6 +313,9 @@ public class Client {
         manager = new ResourceManager();
         manager.LoadAll();
         this.main_interface = new UI(this);
+
+        this.render.main_interface = this.main_interface;
+
         this.LoadTiles("tiles");
         this.LoadLevels("maps");
         this.main_interface.GenerateLevelSelectButtons();
@@ -776,139 +769,6 @@ public class Client {
             }
         }
     }
-    public void RenderUI(){
-        this.batch.setProjectionMatrix(this.main_interface.ui_viewport.getCamera().combined);
-        this.batch.begin();
-//        this.main_interface.DrawDebugInformation();
-        switch (this.state.menu) {
-            case "intro": {
-                this.main_interface.DrawIntro();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-            case "meeting": {
-                this.main_interface.DrawMeeting();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-            case "game": {
-                if (this.active_connection != null) {
-                    this.main_interface.DrawLevelInformation();
-                    if (!this.state.chat_hide) {
-                        this.main_interface.DrawChat();
-                    }
-                    if (this.state.chat_line_open) {
-                        this.main_interface.DrawChatLine("" + this.state.chat_line_buffer);
-                    }
-                    this.main_interface.DrawGameOverlay();
-                } else {
-                    this.OpenMenu("main");
-                }
-                this.main_interface.DrawMuteButton();
-                break;
-            }
-            case "main": {
-                this.main_interface.DrawMainMenu();
-                this.main_interface.DrawMuteButton();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-            case "customize": {
-                this.main_interface.DrawCustomizeMenu();
-                this.main_interface.DrawMuteButton();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-            case "level_select": {
-                this.main_interface.DrawSelectLevel();
-                this.main_interface.DrawMuteButton();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-            case "credits": {
-                this.main_interface.DrawCredits();
-                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
-                break;
-            }
-        }
-        this.batch.end();
-    }
-    public void RenderBody(Body body, int offset_x,int offset_y){
-        body.UpdateDrawPos(0.67f);
-        this.batch.draw(body.texture_region,PosterizeNum(body.draw_pos.x*tiles_size.x)+offset_x,PosterizeNum(-body.draw_pos.y*tiles_size.y)+offset_y);
-        if(body.show_name){
-            this.main_interface.DrawTextCentered(body.id,(int) PosterizeNum(body.draw_pos.x*tiles_size.x+tiles_size.x/2)+offset_x,(int) PosterizeNum((-body.draw_pos.y+1)*tiles_size.y+tiles_size.y/2)+offset_y,1f,10,null,true);
-        }
-    }
-    public void RenderBodies(int offset_x, int offset_y){
-        List<String> sorted_bodies = this.world.bodies.keySet().stream()
-            .sorted(Comparator.comparingInt((String id) -> {
-                    Body body = this.world.bodies.get(id);
-                    if ("player".equals(body.type)) {
-                        return 2;
-                    }
-                    if (body.solid) {
-                        return 1;
-                    }
-                    return 0;
-                })
-                .thenComparing(id -> id))
-            .collect(Collectors.toList());
-
-        for(String body_id : sorted_bodies){
-            this.RenderBody(this.world.bodies.get(body_id), offset_x, offset_y);
-        }
-    }
-    public void RenderMap(int offset_x, int offset_y){
-        float tile_size_x = tiles_size.x;
-        float tile_size_y = tiles_size.y;
-        for(short y = 0; y < this.world.map.size.y; y++){
-            for(short x = 0; x < this.world.map.size.x; x++){
-                LevelMap.Cell cell = this.world.map.Get(x,y);
-                if(cell == null) {continue;}
-                if(!tiles_pallete.containsKey(cell.type)){continue;}
-                if(!tiles_pallete.get(cell.type).solid){
-                    batch.draw(tiles_pallete.get(cell.type).texture, x * tile_size_x + offset_x, -y * tile_size_y + offset_y, tile_size_x, tile_size_y);
-                }
-            }
-        }
-        TextureRegion shadowTexture = manager.GetRegion("pixel_black");
-        batch.setColor(0, 0, 0, 0.3f);
-        for(short y = 0; y < this.world.map.size.y; y++){
-            for(short x = 0; x < this.world.map.size.x; x++){
-                LevelMap.Cell cell = this.world.map.Get(x,y);
-                if(cell == null) {continue;}
-                float drawX = x * tile_size_x + offset_x + 3;
-                float drawY = -y * tile_size_y + offset_y - 3;
-                if(!tiles_pallete.containsKey(cell.type)){
-                    batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
-                }else if(tiles_pallete.get(cell.type).solid) {
-                    batch.draw(shadowTexture, drawX, drawY, tile_size_x, tile_size_y);
-                }
-            }
-        }
-        for(String id: this.world.bodies.keySet()) {
-            Body body = this.world.bodies.get(id);
-            if (body.shadow) {
-                batch.setColor(0, 0, 0, 0.3f);
-                batch.draw(shadowTexture, PosterizeNum(body.draw_pos.x * tiles_size.x) + offset_x + 3, PosterizeNum(-body.draw_pos.y * tiles_size.y) + offset_y - 3, tiles_size.x, tiles_size.y);
-                batch.setColor(1, 1, 1, 1);
-            }
-        }
-        batch.setColor(1, 1, 1, 1);
-        for(short y = 0; y < this.world.map.size.y; y++){
-            for(short x = 0; x < this.world.map.size.x; x++){
-                LevelMap.Cell cell = this.world.map.Get(x,y);
-                if(cell == null) {continue;}
-                String tile_texture = "template";
-                if(tiles_pallete.containsKey(cell.type)){
-                    if(!tiles_pallete.get(cell.type).solid){continue;}
-                    tile_texture = cell.type;
-                }
-                batch.draw(tiles_pallete.get(tile_texture).texture, x*tile_size_x+offset_x, -y*tile_size_y+offset_y, tile_size_x, tile_size_y);
-            }
-        }
-    }
     public void RunLevel(String level_name){
         this.state.map_loaded = false;
         ConnectMe(this);
@@ -944,19 +804,19 @@ public class Client {
             case "game": {
                 if (!this.state.chat_line_open) {
                     if (this.controller.CameraZoomIn() && !this.controller.CameraZoomOut()) {
-                        this.cam.target_zoom = Math.min(this.cam.target_zoom + this.cam.speed, 1.0f);
+                        this.render.cam.target_zoom = Math.min(this.render.cam.target_zoom + this.render.cam.speed, 1.0f);
                     } else if (!this.controller.CameraZoomIn() && this.controller.CameraZoomOut()) {
-                        this.cam.target_zoom = Math.max(this.cam.target_zoom - this.cam.speed, 0.25f);
+                        this.render.cam.target_zoom = Math.max(this.render.cam.target_zoom - this.render.cam.speed, 0.25f);
                     }
                     if (this.controller.CameraMoveRight() && !this.controller.CameraMoveLeft()) {
-                        this.cam.target_pos.x = Math.min(this.cam.target_pos.x + this.cam.move_speed * this.cam.zoom, 200.0f);
+                        this.render.cam.target_pos.x = Math.min(this.render.cam.target_pos.x + this.render.cam.move_speed * this.render.cam.zoom, 200.0f);
                     } else if (!this.controller.CameraMoveRight() && this.controller.CameraMoveLeft()) {
-                        this.cam.target_pos.x = Math.max(this.cam.target_pos.x - this.cam.move_speed * this.cam.zoom, -100.0f);
+                        this.render.cam.target_pos.x = Math.max(this.render.cam.target_pos.x - this.render.cam.move_speed * this.render.cam.zoom, -100.0f);
                     }
                     if (this.controller.CameraMoveUp() && !this.controller.CameraMoveDown()) {
-                        this.cam.target_pos.y = Math.min(this.cam.target_pos.y + this.cam.move_speed * this.cam.zoom, 200.0f);
+                        this.render.cam.target_pos.y = Math.min(this.render.cam.target_pos.y + this.render.cam.move_speed * this.render.cam.zoom, 200.0f);
                     } else if (!this.controller.CameraMoveUp() && this.controller.CameraMoveDown()) {
-                        this.cam.target_pos.y = Math.max(this.cam.target_pos.y - this.cam.move_speed * this.cam.zoom, -100.0f);
+                        this.render.cam.target_pos.y = Math.max(this.render.cam.target_pos.y - this.render.cam.move_speed * this.render.cam.zoom, -100.0f);
                     }
                     if (this.controller.ChatHideInteraction()) {
                         if (!(boolean) this.state.chat_hide_interaction) {
@@ -1227,13 +1087,11 @@ public class Client {
         this.state.music_details_target_volume = 1.0f;
     }
     public void Tick(boolean render){
-        //Debug("  - Tick");
         milli_time = System.currentTimeMillis();
         this.UpdateCursor();
 
         this.state.schedule.removeIf(operator -> operator.Update(Gdx.graphics.getDeltaTime()));
 
-        //Debug(milli_time+"");
         if(this.active_connection != null) {
             this.PullData();
             this.CheckOrders();
@@ -1254,47 +1112,7 @@ public class Client {
         this.actual_fps = Gdx.graphics.getFramesPerSecond();
 
         if(render) {
-            this.cam.Update();
-            this.frame_buffer.begin();
-
-            this.state.music_details_volume += (this.state.music_details_target_volume - this.state.music_details_volume)*0.05f;
-            this.UpdateMusicDetails();
-
-            if(this.state.level_running || !this.state.menu.equals("game")) {
-                ScreenUtils.clear(0.078f, 0.078f, 0.078f, 1f);
-            }else{
-                ScreenUtils.clear(0.15f, 0.15f, 0.15f, 1f);
-            }
-            batch.setProjectionMatrix(this.cam.camera.combined);
-            batch.begin();
-            if (this.world.map.loaded) {
-                int offset_x = (int) -(this.world.map.size.x/2*tiles_size.x);
-                int offset_y = (int) (this.world.map.size.y/2*tiles_size.y);
-                this.RenderMap(offset_x,offset_y);
-                this.RenderBodies(offset_x,offset_y);
-            }
-            batch.end();
-            this.RenderUI();
-            this.frame_buffer.end();
-
-            ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
-
-            batch.setProjectionMatrix(main_interface.ui_viewport.getCamera().combined);
-            batch.setShader(manager.GetShader("shaders/passthrough.frag"));
-//            batch.getShader().setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-            batch.begin();
-            // Передаем виртуальное разрешение буфера, а не размер окна!
-            batch.getShader().setUniformf("u_resolution", 480f, 250f);
-            batch.getShader().setUniformf("u_time", (float) (milli_time-this.state.shader_anim_start_time)/1000.0f);
-
-            // Рисуем текстуру буфера на весь экран интерфейса
-            batch.draw(this.frame_buffer.getColorBufferTexture(),
-                -240, -125, // координаты левого нижнего угла (половина от 480x250)
-                480, 250,   // ширина и высота
-                0, 0, 1, 1);
-            batch.end();
-
-            batch.setShader(null);
+            this.render.RenderMain();
         }
     }
     public void Delete(){
@@ -1309,7 +1127,7 @@ public class Client {
             }
         }
 
-        this.batch.dispose();
+        this.render.batch.dispose();
         manager.dispose();
 
         Debug("Done!");
