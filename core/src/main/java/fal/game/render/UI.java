@@ -159,6 +159,7 @@ public class UI {
         this.ui_viewport.update((int) ui_size.x, (int) ui_size.y,false);
 
         container_styles.put("template",new UIContainer("styles/template_style"));
+        container_styles.put("empty",new UIContainer("styles/template_style"));
         ParseStyles("styles");
 //        container_styles.put("button",new UIContainer("styles/container_button"));
 //        container_styles.put("button_01_s",new UIContainer("styles/button_01_s"));
@@ -198,11 +199,21 @@ public class UI {
         short width = 48;
         short height = 8;
         for(String level_name: this.owner.levels_list){
-            this.select_level_buttons.add(new UIButton(level_name,new Vector2(-this.ui_size.x/2+8+x*(width+8),(int)this.ui_size.y/2-height-8-y*(height+8)),new Vector2(width, height),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
-            y += 1;
-            if(y == 8){
-                y = 0;
-                x += 1;
+            if(level_name.charAt(0)=='#'){
+                x = 0;
+                y += 1;
+                this.select_level_buttons.add(new UIButton(level_name,new Vector2(-this.ui_size.x/2+8+x*(width+8),(int)this.ui_size.y/2-height-8-y*(height+8)),new Vector2(width, height),null,null,null,new Color(1,1,1,1),false));
+                y += 1;
+                continue;
+            }else if(level_name.charAt(0)=='%'){
+                this.select_level_buttons.add(new UIButton(level_name, new Vector2(-this.ui_size.x / 2 + 8 + x * (width + 8), (int) this.ui_size.y / 2 - height - 8 - y * (height + 8)), new Vector2(width, height), container_styles.get("button_04_s"), container_styles.get("button_04_h"), container_styles.get("button_04_p"), new Color(1, 1, 1, 1), true));
+            }else {
+                this.select_level_buttons.add(new UIButton(level_name, new Vector2(-this.ui_size.x / 2 + 8 + x * (width + 8), (int) this.ui_size.y / 2 - height - 8 - y * (height + 8)), new Vector2(width, height), container_styles.get("button_01_s"), container_styles.get("button_01_h"), container_styles.get("button_01_p"), new Color(1, 1, 1, 1), true));
+            }
+            x += 1;
+            if(x == 8){
+                x = 0;
+                y += 1;
             }
         }
         Debug(" ! LEVELS: "+this.select_level_buttons.toString());
@@ -312,11 +323,18 @@ public class UI {
     public void DrawSelectLevel(){
 //        StringBuilder levels_list = new StringBuilder();
         for(UIButton button: this.select_level_buttons){
+            char level_code = button.name.charAt(0);
+            if(level_code=='#'){
+                DrawText(button.name.substring(1),(int) button.pos.x-2,(int) button.pos.y+9,2,8,null,true);
+                continue;
+            }else if(level_code=='%'){
+                button.Draw(this.render.batch,1,this.owner.state.cursor_pos);
+                DrawText(button.name.substring(1),(int) button.pos.x+1,(int) button.pos.y+7,1,8,null,true);
+                continue;
+            }
             button.Draw(this.render.batch,1,this.owner.state.cursor_pos);
-//            levels_list.append(button.name).append("\n");
             DrawText(button.name,(int) button.pos.x+1,(int) button.pos.y+7,1,8,null,true);
         }
-//        DrawTextBuilder(levels_list,(int) -this.ui_size.x/2+10,(int) this.ui_size.y/2-9,1,16,null,true);
 
         this.buttons.get("level_select.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         this.DrawTextCentered("Back",0,(int) -this.ui_size.y/2+25,2,16,null,true);

@@ -5,6 +5,7 @@ import static fal.game.Client.milli_time;
 import static fal.game.Client.tiles_size;
 
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -89,8 +90,15 @@ public class Render {
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
+            case "video": {
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
         }
         this.batch.end();
+    }
+    public void RunVideo(String name){
+
     }
     public void RenderBody(Body body, int offset_x, int offset_y){
         body.UpdateDrawPos(0.67f);
@@ -189,6 +197,23 @@ public class Render {
             this.RenderBodies(offset_x,offset_y);
         }
         batch.end();
+        if(manager.video_player != null){
+            try {
+                manager.video_player.update();
+                Texture frame = manager.video_player.getTexture();
+                if(frame != null){
+                    frame.setFilter(
+                        com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest,
+                        com.badlogic.gdx.graphics.Texture.TextureFilter.Nearest
+                    );
+                    batch.begin();
+                    batch.draw(frame, -240, -125, 480, 250, 0, 1, 1, 0);
+                    batch.end();
+                }
+            }catch (Exception e){
+                Main.Debug("Error: "+e);
+            }
+        }
         this.RenderUI();
         this.frame_buffer.end();
 

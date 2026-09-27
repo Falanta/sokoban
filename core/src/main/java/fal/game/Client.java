@@ -28,6 +28,8 @@ import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.video.VideoPlayer;
+import com.badlogic.gdx.video.VideoPlayerCreator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,6 +90,8 @@ public class Client {
     public static class ResourceManager {
         public final AssetManager assetManager;
         public TextureAtlas atlas;
+        public HashMap<String, String> video_list = new HashMap<String,String>();
+        public VideoPlayer video_player = null;
         public ResourceManager() {
             assetManager = new AssetManager();
 
@@ -111,11 +115,11 @@ public class Client {
             fontParams.fontParameters.characters = "1234567890_.,:;-+()[]{}<>/\\!?%~*ABCDEFGHIJKLMNO '\"`=&@$#^PQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюяЂђЈјЉљЊњЋћЏџҐґЄєІіЇїЎў♥";
             assetManager.load(path, BitmapFont.class, fontParams);
         }
-        public void ParseShaders(String folderPath) {
-            Main.Debug(String.format("- Loading shaders from %s...", folderPath));
-            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folderPath);
+        public void ParseShaders(String folder_path) {
+            Main.Debug(String.format("- Loading shaders from %s...", folder_path));
+            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folder_path);
             if (!dir.exists()) {
-                Main.Debug(String.format("ERROR: There is no folder %s", folderPath));
+                Main.Debug(String.format("ERROR: There is no folder %s", folder_path));
                 return;
             }
 
@@ -126,7 +130,7 @@ public class Client {
                     if (extension.equals("frag")) {
                         String fragPath = file.path();
                         String baseName = file.nameWithoutExtension();
-                        String vertPath = folderPath + "/" + baseName + ".vert";
+                        String vertPath = folder_path + "/" + baseName + ".vert";
                         if (!Gdx.files.internal(vertPath).exists()) {
                             vertPath = "shaders/default.vert";
                         }
@@ -141,11 +145,11 @@ public class Client {
             params.vertexFile = vertPath;
             assetManager.load(fragPath, ShaderProgram.class, params);
         }
-        public void ParseSounds(String folderPath) {
-            Main.Debug(String.format("- Loading %s...", folderPath));
-            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folderPath);
+        public void ParseSounds(String folder_path) {
+            Main.Debug(String.format("- Loading %s...", folder_path));
+            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folder_path);
             if (!dir.exists()) {
-                Main.Debug(String.format("ERROR: There is no folder %s", folderPath));
+                Main.Debug(String.format("ERROR: There is no folder %s", folder_path));
                 return;
             }
             for (com.badlogic.gdx.files.FileHandle file : dir.list()) {
@@ -162,7 +166,26 @@ public class Client {
                 }
             }
         }
-
+        public void ParseVideos(String folder_path){
+            Main.Debug(String.format("- Loading %s...", folder_path));
+            com.badlogic.gdx.files.FileHandle dir = Gdx.files.internal(folder_path);
+            if (!dir.exists()) {
+                Main.Debug(String.format("ERROR: There is no folder %s", folder_path));
+                return;
+            }
+            for (com.badlogic.gdx.files.FileHandle file : dir.list()) {
+                if (!file.isDirectory()) {
+                    String path = file.path();
+                    String extension = file.extension().toLowerCase();
+                    if (extension.equals("webm") || extension.equals("ogv") || extension.equals("mkv")) {
+                        if(file.name().contains("_vid")) {
+                            this.video_list.put(file.nameWithoutExtension(),file.path());
+                            Main.Debug(file.nameWithoutExtension());
+                        }
+                    }
+                }
+            }
+        }
         public void LoadSound(String path) {
             Main.Debug(String.format("  - Loading sound %s", path));
             assetManager.load(path, Sound.class);
@@ -177,6 +200,7 @@ public class Client {
             LoadFont("fonts/small_sokoban.ttf",8);
             LoadFont("fonts/consolas.ttf",12);
             ParseSounds("sounds");
+            ParseVideos("videos");
             ShaderProgram.pedantic = false;
             ParseShaders("shaders");
             assetManager.finishLoading();
@@ -206,6 +230,26 @@ public class Client {
                 Main.Debug("ERROR: "+e);
             }
         }
+        public void PlayVideo(String name,Runnable task){
+            if(!this.video_list.containsKey(name)){Main.Debug(String.format("There is no video %s",name));return;}
+            this.video_player = VideoPlayerCreator.createVideoPlayer();
+            try {
+                video_player.load(Gdx.files.internal(this.video_list.get(name)));
+                video_player.setLooping(false);
+                if(task != null) {
+                    video_player.setOnCompletionListener(video -> {
+                        task.run();
+                    });
+                }
+                video_player.play();
+            }catch (Exception e){
+                Main.Debug(String.format("Error: %s",e));
+            }
+        }
+        public void ClearVideoPlayer(){
+            this.video_player.dispose();
+            this.video_player = null;
+        }
         public Sound GetSound(String path) {
             return assetManager.get(path, Sound.class);
         }
@@ -221,6 +265,9 @@ public class Client {
         }
         public void dispose() {
             assetManager.dispose();
+            if(this.video_player != null){
+                this.video_player.dispose();
+            }
         }
     }
     public static class Camera{
@@ -351,7 +398,8 @@ public class Client {
 
         this.world = new World();
 
-        this.OpenMenu("intro");
+        //this.OpenMenu("intro");
+        this.OpenMenu("main");
 
         Debug("Done!");
     }
@@ -408,7 +456,7 @@ public class Client {
 //            }
 //        }
         // Company loading:
-        path += "/scenario.cmp";
+        path += "/company_01.cmp";
         FileHandle company = Gdx.files.internal(path);
         if (!company.exists()) {
             Debug(String.format(" - There is no scenario: %s",path));
@@ -438,6 +486,7 @@ public class Client {
     }
     public void Leave(){
         Debug(String.format("Leaving: %s...",active_connection.server_name));
+        this.world.map = null;
         this.active_connection.Delete("leave");
     }
     public void RunCommand(String[] arg){
@@ -770,6 +819,28 @@ public class Client {
         }
     }
     public void RunLevel(String level_name){
+        Debug("  - Run level: "+level_name);
+        char level_code = level_name.charAt(0);
+        if(level_code=='%'){
+            this.state.map_loaded = false;
+            this.OpenMenu("video");
+            manager.PlayVideo(level_name.substring(1),()->{
+                this.state.interacted = true;
+                this.state.shader_anim_start_time = System.currentTimeMillis();
+                this.ToSchedule(()-> {
+                    int actual = this.levels_list.indexOf(level_name);
+                    this.RunLevel(this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
+                    manager.ClearVideoPlayer();
+                    this.state.interacted = false;
+                },1.0f);
+            });
+            return;
+        }else if(level_code=='#'){
+            this.state.map_loaded = false;
+            int actual = this.levels_list.indexOf(level_name);
+            this.RunLevel(this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
+            return;
+        }
         this.state.map_loaded = false;
         ConnectMe(this);
         SendMessage("/set_map "+level_name);
@@ -878,13 +949,15 @@ public class Client {
                         this.ToSchedule(()-> {
 //                            SendMessage("/next");
                             int actual = this.levels_list.indexOf(this.world.map.name);
-                            SendMessage("/set_map " + this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
+                            //SendMessage("/set_map " + this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
+                            this.RunLevel(this.levels_list.get(actual+1 >= this.levels_list.size()?0:actual+1));
 
                             this.state.interacted = false;
                         },1.0f);
                     }
                     if (this.main_interface.buttons.get("game.back").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
+                        this.state.map_loaded = false;
                         SendMessage("/leave");
                         this.OpenMenu("main");
                         this.state.music_details_target_volume = 0.0f;

@@ -73,30 +73,37 @@ entities/player_skull
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_smirk
+entities/player_smile
   rotate: false
   xy: 113, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_welp
+entities/player_smirk
   rotate: false
   xy: 127, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_wheelchair
+entities/player_welp
   rotate: false
   xy: 141, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-entities/player_why_cry
+entities/player_wheelchair
   rotate: false
   xy: 155, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+entities/player_why_cry
+  rotate: false
+  xy: 169, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
@@ -204,37 +211,58 @@ styles/button_03_s
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/container_button
+styles/button_04_h
   rotate: false
   xy: 29, 1
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/template_style
+styles/button_04_p
   rotate: false
   xy: 36, 8
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/text_input_01_h
+styles/button_04_s
   rotate: false
   xy: 36, 1
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/text_input_01_p
+styles/container_button
   rotate: false
   xy: 43, 8
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
   index: -1
-styles/text_input_01_s
+styles/template_style
   rotate: false
   xy: 43, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/text_input_01_h
+  rotate: false
+  xy: 50, 8
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/text_input_01_p
+  rotate: false
+  xy: 50, 1
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+styles/text_input_01_s
+  rotate: false
+  xy: 57, 8
   size: 5, 5
   orig: 5, 5
   offset: 0, 0
