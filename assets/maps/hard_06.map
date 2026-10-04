@@ -1,0 +1,15 @@
+{"assets":{"#":"stone_wall",".":"plastic_tiles_floor",",":"plastic_floor"},"size":[8,7],"spawn_pos":[1,3]}
+  ####
+###.,###
+#..,.,.#
+#,#..#,#
+#,#...,#
+#.,.####
+#####
+{"action":"spawn","type":"crate","pos":[3,2],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"crate","pos":[5,2],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"crate","pos":[3,4],"texture":"tiles/crate_02_d"}
+{"action":"spawn","type":"anchor","pos":[1,2],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[4,4],"texture":"tiles/anchor"}
+{"action":"spawn","type":"anchor","pos":[5,4],"texture":"tiles/anchor"}
+

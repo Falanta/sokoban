@@ -230,12 +230,12 @@ public class Client {
                 Main.Debug("ERROR: "+e);
             }
         }
-        public void PlayVideo(String name,Runnable task){
+        public void PlayVideo(String name,Runnable task,boolean loop){
             if(!this.video_list.containsKey(name)){Main.Debug(String.format("There is no video %s",name));return;}
             this.video_player = VideoPlayerCreator.createVideoPlayer();
             try {
                 video_player.load(Gdx.files.internal(this.video_list.get(name)));
-                video_player.setLooping(false);
+                video_player.setLooping(loop);
                 if(task != null) {
                     video_player.setOnCompletionListener(video -> {
                         task.run();
@@ -398,8 +398,8 @@ public class Client {
 
         this.world = new World();
 
-        //this.OpenMenu("intro");
-        this.OpenMenu("main");
+        this.OpenMenu("intro");
+//        this.OpenMenu("main");
 
         Debug("Done!");
     }
@@ -833,7 +833,7 @@ public class Client {
                     manager.ClearVideoPlayer();
                     this.state.interacted = false;
                 },1.0f);
-            });
+            },false);
             return;
         }else if(level_code=='#'){
             this.state.map_loaded = false;
@@ -855,6 +855,21 @@ public class Client {
             manager.GetMusic(this.state.credits_music_name).stop();
             this.state.interacted = false;
         },1.0f);
+    }
+    public void WinAction(){
+        this.state.interacted = true;
+        this.state.shader_anim_start_time = System.currentTimeMillis();
+        this.ToSchedule(()-> {
+            this.state.map_loaded = false;
+            SendMessage("/leave");
+            if(!this.state.music_mute) {
+                manager.PlaySound("sounds/win_snd.ogg", 0.5f, 1.0f, 0.0f);
+            }
+            OpenMenu("win_video");
+            manager.PlayVideo("win_vid",null,true);
+            this.state.interacted = false;
+        },1.0f);
+
     }
     public void Control(){
         if(this.controller == null) {return;}
@@ -942,7 +957,8 @@ public class Client {
                     if (this.main_interface.buttons.get("game.next").Read()) {
                         manager.PlaySound("sounds/pop_snd.ogg",0.5f,1.0f,0.0f);
                         if(this.world.map.name.equals(this.levels_list.get(this.levels_list.size()-1))){
-                            manager.PlaySound("sounds/win_snd.ogg",0.5f,1.0f,0.0f);
+                            this.WinAction();
+                            break;
                         }
                         this.state.interacted = true;
                         this.state.shader_anim_start_time = System.currentTimeMillis();
@@ -1151,6 +1167,34 @@ public class Client {
                     this.state.menu_animation_start_time -= 100;
                 }
                 break;
+            }
+            case "win_video":{
+                if(this.controller.MouseInteraction() && !this.state.interacted) {
+                    if (this.main_interface.buttons.get("win_video.back").Read()) {
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
+                        this.state.interacted = true;
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
+                        this.ToSchedule(()-> {
+                            manager.ClearVideoPlayer();
+                            OpenMenu("main");
+                            this.state.interacted = false;
+                        },1.0f);
+                        break;
+                    }
+                    if (this.main_interface.buttons.get("win_video.credits").Read()){
+                        manager.PlaySound("sounds/pop_snd.ogg",0.5f,0.5f,0.0f);
+                        this.state.interacted = true;
+                        this.state.shader_anim_start_time = System.currentTimeMillis();
+                        this.ToSchedule(()-> {
+                            manager.ClearVideoPlayer();
+                            OpenMenu("credits");
+                            this.state.interacted = false;
+                            this.UpdateMusicVolume(0.0f);
+                            manager.GetMusic(this.state.credits_music_name).play();
+                        },1.0f);
+                        break;
+                    }
+                }
             }
         }
     }

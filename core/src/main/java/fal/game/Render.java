@@ -53,9 +53,12 @@ public class Render {
             }
             case "game": {
                 if (this.owner.active_connection != null) {
-                    this.main_interface.DrawLevelInformation();
+                    //this.main_interface.DrawLevelInformation();
                     if (!this.state.chat_hide) {
                         this.main_interface.DrawChat();
+                        this.main_interface.DrawDebugInformation();
+                    }else{
+                        this.main_interface.DrawLevelInformation();
                     }
                     if (this.state.chat_line_open) {
                         this.main_interface.DrawChatLine("" + this.state.chat_line_buffer);
@@ -94,11 +97,13 @@ public class Render {
                 this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
                 break;
             }
+            case "win_video": {
+                this.main_interface.DrawWin();
+                this.main_interface.DrawTextCentered("x",(int)this.state.cursor_pos.x,(int)this.state.cursor_pos.y,1,8,null,false);
+                break;
+            }
         }
         this.batch.end();
-    }
-    public void RunVideo(String name){
-
     }
     public void RenderBody(Body body, int offset_x, int offset_y){
         body.UpdateDrawPos(0.67f);
@@ -198,6 +203,7 @@ public class Render {
         }
         batch.end();
         if(manager.video_player != null){
+            ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
             try {
                 manager.video_player.update();
                 Texture frame = manager.video_player.getTexture();
@@ -216,8 +222,6 @@ public class Render {
         }
         this.RenderUI();
         this.frame_buffer.end();
-
-        ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
 
         batch.setProjectionMatrix(main_interface.ui_viewport.getCamera().combined);
         batch.setShader(manager.GetShader("shaders/passthrough.frag"));

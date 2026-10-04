@@ -448,16 +448,23 @@ tiles/template
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_floor
+tiles/wooden_alt_floor
   rotate: false
   xy: 309, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
-tiles/wooden_wall
+tiles/wooden_floor
   rotate: false
   xy: 323, 1
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+tiles/wooden_wall
+  rotate: false
+  xy: 337, 1
   size: 12, 12
   orig: 12, 12
   offset: 0, 0

@@ -156,18 +156,11 @@ public class UI {
 
         this.ui_viewport = new FitViewport(ui_size.x,ui_size.y,new OrthographicCamera());
         this.ui_viewport.apply();
-        this.ui_viewport.update((int) ui_size.x, (int) ui_size.y,false);
+        this.ui_viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),false);
 
         container_styles.put("template",new UIContainer("styles/template_style"));
         container_styles.put("empty",new UIContainer("styles/template_style"));
         ParseStyles("styles");
-//        container_styles.put("button",new UIContainer("styles/container_button"));
-//        container_styles.put("button_01_s",new UIContainer("styles/button_01_s"));
-//        container_styles.put("button_01_h",new UIContainer("styles/button_01_h"));
-//        container_styles.put("button_01_p",new UIContainer("styles/button_01_p"));
-//        container_styles.put("button_02_s",new UIContainer("styles/button_02_s"));
-//        container_styles.put("button_02_h",new UIContainer("styles/button_02_h"));
-//        container_styles.put("button_02_p",new UIContainer("styles/button_02_p"));
 
 
         buttons.put("global.mute",new UIButton("Mute",new Vector2(this.ui_size.x/2-20,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
@@ -190,6 +183,9 @@ public class UI {
         buttons.put("game.next",new UIButton("Next",new Vector2(this.ui_size.x/2-92,this.ui_size.y/2-20),new Vector2(12, 12),container_styles.get("button_03_s"),container_styles.get("button_03_h"),container_styles.get("button_03_p"),new Color(1,1,1,1),false));
 
         buttons.put("level_select.back",new UIButton("Back",new Vector2(-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+
+        buttons.put("win_video.back",new UIButton("Back",new Vector2(-this.ui_size.x/8-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
+        buttons.put("win_video.credits",new UIButton("Credits",new Vector2(this.ui_size.x/8-this.ui_size.x/16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
 
         buttons.put("credits.back",new UIButton("Back",new Vector2(this.ui_size.x/2 - this.ui_size.x/8-16,-this.ui_size.y/2+16),new Vector2(this.ui_size.x/8, 16),container_styles.get("button_01_s"),container_styles.get("button_01_h"),container_styles.get("button_01_p"),new Color(1,1,1,1),true));
     }
@@ -259,6 +255,15 @@ public class UI {
         this.buttons.get("credits.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
         this.DrawTextCentered("Back",(int)(this.ui_size.x/2 - this.ui_size.x/16-16),(int) -this.ui_size.y/2+25,2,16,null,true);
         this.DrawText(this.credits,(int)(-this.ui_size.x/2 + 16),(int) (-this.ui_size.y / 2 + delta/100.0f),2,12,null,true);
+    }
+    public void DrawWin(){
+//        ScreenUtils.clear(0.0f, 0.0f, 0.0f, 1f);
+        long delta = milli_time - this.owner.state.menu_animation_start_time;
+        this.DrawTextCentered("Congratulations!",0,(int)(this.ui_size.y/4),2,16,null,true);
+        this.buttons.get("win_video.back").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.buttons.get("win_video.credits").Draw(this.render.batch,2,this.owner.state.cursor_pos);
+        this.DrawTextCentered("Back",(int)(-this.ui_size.x/8),(int) -this.ui_size.y/2+25,2,16,null,true);
+        this.DrawTextCentered("Credits",(int)(this.ui_size.x/8),(int) -this.ui_size.y/2+25,2,16,null,true);
     }
     public void DrawLogoAnim(float delta,int x,int y){
         float back_delta = 1-delta;
