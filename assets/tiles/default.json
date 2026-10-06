@@ -23,6 +23,10 @@
     "texture": "tiles/wooden_floor",
     "solid": false
   },
+  "wooden_alt_floor": {
+    "texture": "tiles/wooden_alt_floor",
+    "solid": false
+  },
   "plastic_wall": {
     "texture": "tiles/plastic_wall",
     "solid": true
